@@ -1,0 +1,65 @@
+/*
+ * Mcmc.h
+ *
+ *  Created on: Dec 16, 2010
+ *
+ */
+
+#ifndef MCMC_H_
+#define MCMC_H_
+
+#include "MbRandom.h"
+#include "Model.h"
+#include "Patron.h"
+#include "Settings.h"
+#include "Table.h"
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+
+class FileHandler;
+class MbRandom;
+class Model;
+class Patron;
+class Settings;
+class Table;
+
+class Mcmc
+{
+
+public:
+	Mcmc(Model*, Settings*,  MbRandom*);
+	virtual ~Mcmc();
+
+private:
+	double		safeExp(double lnX);
+	Table*		reseatPatron(void);
+	//double		proposeState(void);
+	//double		acceptState(void);
+	void		runChain(void);
+
+	MbRandom	*randomPtr;
+	Model		*modelPtr;
+	Settings	*settingsPtr;
+	std::list<Table*>* tableListPtr;
+	std::list<Patron*>* patronListPtr;
+
+	int			numCycles;
+	int			printFreqMH;
+	int			printFreqCRP;
+
+	double		alphaCRP;
+	double		auxCRP;
+	double		tuning;
+
+	int			numStates;
+	int			numRateElements;
+	bool		symmetricQ;
+
+	double		oldLnL, newLnL;
+
+
+};
+
+#endif /* MCMC_H_ */

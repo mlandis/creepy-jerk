@@ -1,0 +1,357 @@
+/*
+ * Mcmc.cpp
+ *
+ *  Created on: Dec 16, 2010
+ *
+ */
+
+#include "Mcmc.h"
+
+Mcmc::Mcmc(Model *mp, Settings *sp, MbRandom *rp)
+{
+	modelPtr = mp;
+	randomPtr = rp;
+	settingsPtr = sp;
+	tableListPtr = modelPtr->getTableListPtr();
+	patronListPtr = modelPtr->getPatronListPtr();
+
+	numCycles = settingsPtr->getNumCycles();
+	printFreqMH = settingsPtr->getPrintFreqMH();
+	printFreqCRP = settingsPtr->getPrintFreqCRP();
+
+	//numCycles = 1000000;
+	numCycles = 0;
+	printFreqMH = 1;
+	printFreqCRP = 1;
+
+	alphaCRP = settingsPtr->getAlphaCRP();
+	auxCRP = settingsPtr->getAuxCRP();
+
+	oldLnL = 0.0;
+	newLnL = 0.0;
+
+	runChain();
+}
+
+Mcmc::~Mcmc()
+{
+	// TODO Auto-generated destructor stub
+}
+
+
+void Mcmc::runChain()
+{
+	std::cout << "MCMC: Run chain.\n";
+
+	oldLnL = modelPtr->modelLogLikelihood();
+
+	// initialize the chain by keeping the first chain state
+	// Table* table;// = reseatPatron();
+	// Parm* parm;// = modelPtr->pickParmAtRandom(table);
+	 //oldLnL = parm->change();
+	 //modelPtr->keep(parm);
+
+	// get initial likelihood
+	for (int n = 1; n <= numCycles; n++)
+	{
+		// update seating via CRP
+		// NOTE: newLnL and oldLnL are updated as part of this step
+		Table* table = reseatPatron();
+		double lnLikelihoodRatio = newLnL - oldLnL;
+		std::cout << "lnLikelihoodRatio: " << lnLikelihoodRatio << "\n";
+
+		// select a parameter to change
+		Parm* parm = modelPtr->pickParmAtRandom(table);
+
+		// propose new parameters
+		double lnProposalRatio = parm->change();
+		std::cout << "lnProposalRatio: " << lnProposalRatio << "\n";
+
+		// calculate the prior ratio
+		double lnPriorRatio = parm->lnPriorRatio();
+		std::cout << "lnPriorRatio: " << lnPriorRatio << "\n";
+
+
+		// calculate likelihood ratio
+		double r = safeExp( lnLikelihoodRatio + lnPriorRatio + lnProposalRatio );
+
+		// accept or reject the proposed state as the next state of the chain
+		bool acceptState = false;
+		double u = randomPtr->uniformRv();
+		if (u < r)
+		{
+			// std::cout << "\tu=" << u << "\tr=" << r << "\n";
+			acceptState = true;
+		}
+
+		// print information to the screen
+		if ( n % printFreqMH == 0 )
+		{
+			std::cout << std::setw(5) << n << " -- ";
+			std::cout << std::fixed << std::setprecision(8) << oldLnL << " -> " << newLnL;
+			if (acceptState == true)
+				std::cout << " -- Accepted change\n"; // to " << parm->getName() << std::endl;
+			else
+				std::cout << " -- Rejected change\n"; // to " << parm->getName() << std::endl;
+		}
+		if (n % (printFreqMH * printFreqCRP) == 0)
+		{
+			std::cout << "\n";
+			modelPtr->printTables();
+		}
+
+		// update the state of the chain
+		if (acceptState == true)
+		{
+			parm->incrementNumAccepted();
+			oldLnL = newLnL;
+			modelPtr->keep(parm);
+		}
+		else
+		{
+			modelPtr->restore(parm);
+		}
+
+		// std::cout << "\tCycle=" << n << " complete.\n";
+
+		// std::cout << "\n\n\n\n";
+		/*
+		// print out current chain state
+		if ( n == 1 || n % sampleFrequency == 0 || n == numCycles )
+			printChainState(n, oldLnL);
+
+		// print summary of chain
+		if ( n % summarizeFrequency == 0 )
+			treeSummary->printSummary();
+		}
+		*/
+		// treeSummary->print();
+		// modelPtr->printAcceptanceInfo();
+
+	}
+	std::cout << "MCMC: Complete.\n";
+}
+
+double Mcmc::safeExp(double lnX) {
+
+	if (lnX < -300.0)
+		return 0.0;
+	else if (lnX > 0.0)
+		return 1.0;
+	else
+		return exp(lnX);
+}
+
+Table* Mcmc::reseatPatron(void)
+{
+	// 0. Initialize CRP structures
+	int numRegTables = tableListPtr->size();
+	int numAuxTables = auxCRP * numRegTables + 1;
+	std::vector<double> proposalLnLs;
+	std::vector<double> proposalProbs;
+	std::list<Table*> auxTableList;
+
+	// 1. Examine the patrons according to order
+	Patron* p = (*patronListPtr->begin());
+	patronListPtr->push_back(p);
+	// tableListPtr->front()->print();
+	patronListPtr->pop_front();
+	// tableListPtr->front()->print();
+
+	Table* pTable = p->getTable();
+	p->stand();
+	//pTable->waitTable();
+	if (pTable->getPatronList().size() == 0)
+	{
+		tableListPtr->remove(pTable);
+	}
+	// clear the table if this is the last patron
+
+	//(*it_t)->waitTable();
+	// std::cout << "stand\n";
+	// tableListPtr->front()->print();
+	// p->print();
+
+	// 2. Seat the patron at (1, ..., K) tables and calculate likelihoods
+	std::cout << "\t\tnumRegTables = " << numRegTables << "\n";
+	for (std::list<Table*>::iterator it_t = tableListPtr->begin(); it_t != tableListPtr->end(); it_t++)
+	{
+		// sit the patron at the next table
+		p->sit(*it_t);
+
+		std::cout << *it_t << "\n";
+		// update the model
+		modelPtr->updateModel();
+
+		// calculate the likelihoods
+		proposalLnLs.push_back(modelPtr->modelLogLikelihood());
+		std::cout << "\t\t\t" << proposalLnLs.back() << "\n";
+
+		// calculate the likelihood-weighted probabilities
+		double val = (*proposalLnLs.end()) * (*it_t)->getPatronList().size() / (numRateElements - 1 + alphaCRP);
+
+		// store the value
+		proposalProbs.push_back(val);
+
+		// remove patron from table
+		p->stand();
+	}
+
+	//std::cout << "\t\t3\n";
+	// 3. Seat patrons at (K+1, ..., K+M) auxillary tables
+	// construct M auxillary tables
+
+	std::cout << "\t\tnumAuxTables = " << numAuxTables << "\n";
+	for (int i = 0; i < numAuxTables; i++)
+	{
+		// draw new auxillary parameters
+		std::vector<Parm*> auxParmList;
+		//auxParmList.push_back(new Eta(randomPtr, "Eta"));
+
+		// add the table to the auxillary table list
+		auxTableList.push_back(new Table(&auxTableList, auxParmList));
+		Table* auxTable = auxTableList.back();		// .back() is a const&, .end() is an ::iterator
+
+		// sit the patron at the new table
+		p->sit(auxTable);
+
+		std::cout << i << "\n";
+		// update the model
+		modelPtr->updateModel();
+
+		// calculate the likelihoods
+		proposalLnLs.push_back(modelPtr->modelLogLikelihood());
+		std::cout << "\t\t\t" << proposalLnLs.back() << "\n";
+
+		// calculate probabilities (unnormalized)
+		double val = (*proposalLnLs.end()) * (alphaCRP / numAuxTables) / (numRateElements - 1 + alphaCRP);
+
+		// store the value
+		proposalProbs.push_back(val);
+
+		// remove patron from table
+		p->stand();
+	}
+
+	// 4. normalize proposed seating probabilities
+	double probNorm = 0.0;
+	for (int i = 0; i < (int)proposalProbs.size(); i++)
+		probNorm += proposalProbs[i];
+	for (int i = 0; i < (int)proposalProbs.size(); i++)
+	{
+		proposalProbs[i] = proposalProbs[i] / probNorm;
+		std::cout << "\t\t" << proposalProbs[i] << "\n";
+	}
+
+	//std::cout << "\t\t5\n";
+	// 5. determine which seating arrangement to keep
+	int probIndex = -1;
+	double u = randomPtr->uniformRv();
+	double probSum = 0.0;
+	for (int i = 0; i < (int)proposalProbs.size(); i++)
+	{
+		probSum += proposalProbs[i];
+		if (u < probSum)
+		{
+			probIndex = i;
+			break;
+		}
+	}
+	if (probIndex == -1)
+		std::cerr << "ERROR: failed to sample new seating arrangement.\n";
+	else if (probIndex > numRegTables + numAuxTables)
+		std::cerr << "ERROR: attempted to seat patron outside of tableList bounds.\n";
+
+	// update the MCMC proposal likelihood for the unperturbed parameter values
+	oldLnL = proposalLnLs[probIndex];
+
+	// commit the new seating arrangement to the proposed MCMC state
+	if (probIndex < numRegTables)
+	{
+		std::cout << "\tReg. table\n";
+		// find the correct regular table
+		std::list<Table*>::iterator it_t = tableListPtr->begin();
+		for (int i = 0; i < probIndex; i++)
+		{
+			it_t++;
+		}
+		p->sit(*it_t);
+		modelPtr->updateModel();
+		newLnL = modelPtr->modelLogLikelihood();
+		return *it_t;
+	}
+	else
+	{
+		std::cout << "\tAux. table\n";
+		// find the correct auxillary table
+		std::list<Table*>::iterator it_t = auxTableList.begin();
+		Table* t = NULL;
+
+		for (int i = numRegTables; i < probIndex; i++)
+		{
+			it_t++;
+		}
+
+		//(*it_t)->print();
+
+		t = (*it_t);
+		auxTableList.remove(*it_t);
+		//std::cout << "yo\n";
+		//p->print();
+		p->sit(t);
+		p->print();
+
+		for (std::list<Table*>::iterator it_w = auxTableList.begin(); it_w != auxTableList.end(); it_w++)
+		{
+			// (*it_w)->waitTable();
+		}
+
+		//t = (*it_t);
+
+		if (t == NULL)
+			std::cerr << "ERROR: failed to find auxillary table in auxTableList!\n";
+
+		//p->print();
+		//t->print();
+		tableListPtr->push_back(t);
+		modelPtr->updateModel();
+		newLnL = modelPtr->modelLogLikelihood();
+		return t;
+	}
+
+	// this should never occur
+	return NULL;
+}
+
+#if 0
+
+/*
+for (int i = numRegTables; i < numRegTables + numAuxTables; i++)
+{
+	if (probIndex == i)
+	{
+		t = (*it_t);
+	}
+	else
+	{
+		std::cout << "remove Aux\n";
+		std::list<Table*>::iterator it_temp = it_t;
+		it_temp++;
+		auxTableList.remove(*it_t);
+		it_t = it_temp;
+		std::cout << "ok\n";
+	}
+	it_t++;
+}
+*/
+
+/*
+std::cout << "i:" << i << "\n";
+if (it_t != auxTableList.end())
+{
+	it_t++;
+	(*it_t)->print();
+}
+*/
+
+#endif

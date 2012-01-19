@@ -126,6 +126,10 @@ class MbRandom {
 		            double   poissonQuantile(double lambda, double p);                                                 /*!< quantile of a Poisson(lambda) distribution                                     */
 		              void   discretizeGamma(std::vector<double> &catRate, double a, double b, int nCats, bool median);/*!< calculates the average/median values for a discretized gamma distribution      */
 		            double   lnGamma(double a);                                                                        /*!< log of the gamma function                                                      */
+		            double   truncatedNormalPdf(double a, double b, double mu, double sigma, double p);
+		            double   truncatedHalfNormalPdf(double a, bool posInf, double mu, double sigma, double p);
+		            double   truncatedNormalRv(double a, double b, double mu, double sigma);
+					double   truncatedHalfNormalRv(double a, bool posInf, double mu, double sigma);
 
 	private:
 	                        /* private functions */
@@ -363,6 +367,47 @@ inline double MbRandom::normalPdf(double mu, double sigma, double x) {
 	return exp( -0.5 * y * y )  / ( sigma * sqrt ( 2.0 * PI ) );
 }
 
+
+inline double MbRandom::truncatedNormalPdf(double a, double b, double mu, double sigma, double p)
+{
+	if (a < b)
+		return normalPdf(mu, sigma, p) / (normalCdf(mu, sigma, b) - normalCdf(mu, sigma, a));
+	else
+		return 0.0;
+}
+
+inline double MbRandom::truncatedNormalRv(double a, double b, double mu, double sigma)
+{
+	double x;
+	do
+	{
+		x = normalRv(mu, sigma);
+	}while(x < a || x > b);
+	return x;
+}
+
+
+inline double MbRandom::truncatedHalfNormalPdf(double a, bool posInf, double mu, double sigma, double p)
+{
+	// untested
+	if (posInf)
+		return normalPdf(mu, sigma, p) / (1.0 - normalCdf(mu, sigma, a));
+	else
+		return normalPdf(mu, sigma, p) / normalCdf(mu, sigma, a);
+}
+
+
+inline double MbRandom::truncatedHalfNormalRv(double a, bool posInf, double mu, double sigma)
+{
+	// untested
+	double x;
+	do
+	{
+		x = normalRv(mu, sigma);
+	}while( (x < a && posInf) || (x > a && !posInf) );
+	return x;
+}
+
 /*!
  * This function calculates the natural log of the probability density 
  * for a normally-distributed random variable.
@@ -376,7 +421,8 @@ inline double MbRandom::normalPdf(double mu, double sigma, double x) {
  */
 inline double MbRandom::lnNormalPdf(double mu, double sigma, double x) {
 
-	return -0.5 * std::log(2.0 * PI * sigma) - 0.5 * (x - mu) * (x - mu) / (sigma * sigma);
+	// corrected normalizing constant for sigma^2 MJL 12/14/11
+	return -0.5 * std::log(2.0 * PI * sigma * sigma) - 0.5 * (x - mu) * (x - mu) / (sigma * sigma);
 }
 
 /*!

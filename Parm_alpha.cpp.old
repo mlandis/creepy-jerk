@@ -149,6 +149,11 @@ double Alpha::lnPriorRatio(void) {
 	return 0.0;
 }
 
+double Alpha::lnPrior(void)
+{
+	return concs[activeState]->lnProbability();
+}
+
 double Alpha::change(void) {
 
 	numAttemptedChanges++;
@@ -179,7 +184,7 @@ std::string Alpha::getParameterStr(void) {
 
 	double k = concs[activeState]->getValue();
 	char tempCh[50];
-	sprintf(tempCh, "%1.3lf\t", k);
+	sprintf(tempCh, "%1.6lf\t", k);
 	std::string pStr = tempCh;
 	return pStr;
 }

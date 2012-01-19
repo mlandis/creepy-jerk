@@ -18,6 +18,7 @@ public:
 						Parm(MbRandom *rp, std::string pn);
 	std::string			getName(void)								{ return parmName; }
 	virtual double		lnPriorRatio(void)= 0;
+	virtual double		lnPrior(void) = 0;
 	virtual double		change(void) = 0;
 	virtual void		print(void) = 0;
 	virtual void		keep(void) = 0;

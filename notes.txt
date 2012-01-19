@@ -1,8 +1,32 @@
+12-21-11
+
+
+- Bayes factors, stepping stone
+- Test cases for parameter inequalities
+- Add'l jump kernels, Levy processes
+	alpha stable process
+	alpha stable jumps
+	double Exp
+	skewed Normal
+	variance Gamma
+	
+- Real data from Uyeda, Harmon, etc.
+
+
+
+12-13-11 MJL
+- Generate dataset for single topology over many traits (i.e. alignment-style)
+
+12-12-11 MJL
+TODO:
+- Confirm all proposals are on state=1, all commits are on state=0. 
+- Is the prior too elastic? Consider creating individual parameters for l_jn, s_jn, s_bm.
+- Remove all CRP, FFT machinery.
+- Verify computations by hand.
+
 10-18-11 MJL
-
-Need to allow for jumpSize, jumpCount to copy across. I think the increment/decrement is
+TODO:
+X Need to allow for jumpSize, jumpCount to copy across. I think the increment/decrement is
 operating on uninitialized space's junk, causing segfault.
-
-Moved the probability machinery out of Node and back into Model.
-
-Blah, get rid of all this activeParm flipping and just define 0 to be inactive and 1 to be active.
+X Moved the probability machinery out of Node and back into Model.
+- Blah, get rid of all this activeParm flipping and just define 0 to be inactive and 1 to be active.

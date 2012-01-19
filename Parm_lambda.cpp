@@ -148,6 +148,11 @@ double Lambda::lnPriorRatio(void) {
 	return expmeans[activeState]->lnProbability() - expmeans[getInactiveState()]->lnProbability();
 }
 
+double Lambda::lnPrior(void)
+{
+	return expmeans[activeState]->lnProbability();
+}
+
 double Lambda::change(void) {
 
 	numAttemptedChanges++;
@@ -178,7 +183,7 @@ std::string Lambda::getParameterStr(void) {
 
 	double k = expmeans[activeState]->getValue();
 	char tempCh[50];
-	sprintf(tempCh, "%1.3lf\t", k);
+	sprintf(tempCh, "%1.6lf\t", k);
 	std::string pStr = tempCh;
 	return pStr;
 }

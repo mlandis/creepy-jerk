@@ -15,6 +15,7 @@
 #include "Parm.h"
 
 #include <algorithm>
+#include <stdio.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -65,17 +66,21 @@ public:
 	void					setMu(double x)			{ mu = x; }
 	void					setSigma(double x)		{ sigma = x; }
 	void					setK(double x)			{ k = x; }
+	void					setKb(double x)			{ kb = x; }
+	void					setKj(double x)			{ kj = x; }
 	void					addK(double x)			{ k += x; }
 	void					addMu(double x)			{ mu += x; }
 	double					getMu(void)				{ return mu; }
 	double					getSigma(void)			{ return sigma; }
 	double					getK(void)				{ return k; }
+	double					getKb(void)				{ return kb; }
+	double					getKj(void)				{ return kj; }
 	double					getRatio(void)			{ return ratio; }
 	void					like(void);
 
 	void					addJump(double j, int space);
 	void					removeJump(int j, int space);
-	void					copySpace(void);
+	void					copySpace(int i, int j);
 
 	int						getActiveParm(void)		{ return activeParm; }
 	bool					getUpdateParm(void)		{ return updateParm; }
@@ -92,12 +97,12 @@ public:
 
 	void					setActiveParm(int x)	{ activeParm = x; }
 	void					setUpdateParm(bool tf)	{ updateParm = tf;}
-	void					setJumpCount(int x)	{ jumpCount[activeParm] = x; }
-	void					setLnProbJumpCount(double x) { lnProbJumpCount[activeParm] = x; }
-	void					setJumpSize(std::vector<double>& x)	{ jumpSize[activeParm] = x; }
-	void					setLnProbJumpSize(std::vector<double>& x) { lnProbJumpSize[activeParm] = x; }
-	void					setSumJumpSize(double x) { sumJumpSize[activeParm] = x; }
-	void					setSumLnProbJumpSize(double x) { sumLnProbJumpSize[activeParm] = x; }
+	void					setJumpCount(int x)	{ jumpCount[1] = x; }
+	void					setLnProbJumpCount(double x) { lnProbJumpCount[1] = x; }
+	void					setJumpSize(std::vector<double>& x)	{ jumpSize[1] = x; }
+	void					setLnProbJumpSize(std::vector<double>& x) { lnProbJumpSize[1] = x; }
+	void					setSumJumpSize(double x) { sumJumpSize[1] = x; }
+	void					setSumLnProbJumpSize(double x) { sumLnProbJumpSize[1] = x; }
 
 
 
@@ -124,7 +129,9 @@ private:
 	bool					updateParm;
 	double					mu;
 	double					sigma;
-	double					k;
+	double					k;						// likelihood at node
+	double					kb;						// Brownian motion likelihood component
+	double					kj;						// jump kernel likelihood component
 	int						jumpCount[2];
 	double					lnProbJumpCount[2];
 	std::vector<double>		jumpSize[2];
@@ -153,14 +160,19 @@ public:
 	std::string		getNewick(void);
 	double			getTreeLength(void)				{ return treeLength; }
 	int				getNumJumps(void)				{ return numJumps; }
-	void			setNumJumps(int x)				{ numJumps = x; }
-	void			incNumJumps(void)				{ numJumps++; }
-	void			decNumJumps(void)				{ numJumps--; }
+	Node*			getRandomNode(void);
+	Node*			getRandomNodeWithJumps(void);
+	Node*			getRandomNodeNotRoot(void);
+	Node*			getRandomNodeByLength(void);
+	Node*			getRandomNodeNotRootByLength(void);
+	void			setNumJumps(int x, int space)				{ numJumps = x; }
+	void			incrementNumJumps(void)				{ numJumps++; }
+	void			decrementNumJumps(void)				{ numJumps--; }
 
 	void			setBranchRatios(void);
-	double			proposeAddJump(double lambda, double sigma, int space);
-	double			proposeRemoveJump(double lambda, double sigma, int space);
-	void			copyNodeSpaces(void);
+	//double			proposeAddJump(double lambda, double sigma, int space);
+	//double			proposeRemoveJump(double lambda, double sigma, int space);
+	void			copyNodeSpaces(int i, int j);
 
 	double			lnProbability(void);
 	void			print(void);
@@ -174,8 +186,9 @@ public:
 	void			initializeTaxonBipartitions(void);
 	void			getTaxonBipartitions(void);
 	void			printTaxonBipartitions(void);
-	void			printJumpSamples(void);
+	void			printJumpSamples(int space);
 	void			printJumpSummary(void);
+	void			printJumpSizes(int space);
 	void			markPathDownFromNode(Node* p);
 
 private:
@@ -208,6 +221,7 @@ public:
 					~Tree(void);
 	Topology*		getActiveTopology(void)			{ return trees[activeState]; }
 	double			lnPriorRatio(void);
+	double			lnPrior(void);
 	double			change(void);
 	double			getValue(void);
 	void			print(void);

@@ -58,7 +58,7 @@ Patron::Patron(Table* t, std::vector<std::vector<double> > d, double* theta, int
 		}
 	}
 
-	print();
+	//print();
 }
 
 Patron::Patron(std::vector<std::vector<double> > d, double* theta, int ns, double sd, std::string n, int m)

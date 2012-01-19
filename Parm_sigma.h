@@ -15,6 +15,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <stdio.h>
 #include <string>
 
 class MbRandom;
@@ -28,6 +29,7 @@ public:
 	Var			&operator=(const Var &k);
 	double		change(void);
 	double		change(double);
+	double		changeTruncated(double);
 	double		getValue(void)			{ return k; }
 	double		lnProbability(void);
 	void		print(void);
@@ -51,6 +53,7 @@ public:
 	Var*		getActiveVar(void) const		{return vars[activeState]; }
 	Var*		getInactiveVar(void) const		{return vars[getInactiveState()]; }
 	double		lnPriorRatio(void);
+	double		lnPrior(void);
 	double		change(void);
 	double		getValue(void);
 	void		print(void);

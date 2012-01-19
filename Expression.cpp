@@ -31,7 +31,7 @@ Expression::~Expression(void)
 void Expression::initializeTaxaNames(void)
 {
 
-	std::cout << "INITIALIZING: Taxa names\n";
+	if (settingsPtr->getPrintStdOut()) std::cout << "INITIALIZING: Taxa names\n";
 
 	// read data from file
 	std::string taxaFileName = settingsPtr->getInputDirPath() + settingsPtr->getTaxaFileName();
@@ -54,14 +54,16 @@ void Expression::initializeTaxaNames(void)
 
 	numTaxa = taxonCount;
 
-	std::cout << "\tRead in " << numTaxa << " taxa.\n\n";
+	if (settingsPtr->getPrintStdOut())
+		std::cout << "\tRead in " << numTaxa << " taxa.\n\n";
 
 }
 
 void Expression::initializeExprData(void)
 {
 
-	std::cout << "INITIALIZING: Expression data\n";
+	if (settingsPtr->getPrintStdOut())
+		std::cout << "INITIALIZING: Expression data\n";
 
 
 	// Initialize FFT settings for tip data
@@ -175,7 +177,8 @@ void Expression::initializeExprData(void)
 	//std::cout << timeIndex << "\n"; exit(1);
 	numTimepoints = timeIndex;
 
-	std::cout << "\tRead in " << numTranscripts << " transcripts.\n\n";
+	if (settingsPtr->getPrintStdOut())
+		std::cout << "\tRead in " << numTranscripts << " transcripts.\n\n";
 
 	delete [] theta;
 	delete exprFile;

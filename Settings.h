@@ -12,14 +12,17 @@
  */
 
 #include <iostream>
-#include <sstream>
-#include <cstdlib>
-#include <string>
-#include <sstream>
-#include <vector>
+#include <map>
 #include <math.h>
+#include <sstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <time.h>
+#include <vector>
 
 #include "FileMgr.h"
+#include "Util.h"
 
 #ifndef SETTINGS_H_
 #define SETTINGS_H_
@@ -40,6 +43,12 @@ public:
 
 	int			getSeed(void)					{ return seed; }
 	bool		getFixBranches(void)			{ return fixBranches; }
+	double		getTuningBM(void)				{ return tuningBM; }
+	bool		getUseJumpKernel(void)			{ return useJumpKernel; }
+
+	bool		getUseSteppingStone(void)		{ return useSteppingStone; }
+	int			getNumSteppingStone(void)		{ return numSteppingStone; }
+	double		getBetaSteppingStone(void)		{ return betaSteppingStone; }
 
 	double		getAlphaCRP(void)				{ return alphaCRP; }
 	double		getAuxCRP(void)					{ return auxCRP; }
@@ -50,6 +59,8 @@ public:
 	int			getNumCycles(void)				{ return numCycles; }
 	int			getPrintFreqMH(void)			{ return printFreqMH; }
 	int			getPrintFreqCRP(void)			{ return printFreqCRP; }
+	int			getPrintFreqJump(void)			{ return printFreqJump; }
+	bool		getPrintStdOut(void)			{ return printStdOut; }
 
 	bool		getUseFFT(void)					{ return useFFT; }
 	int			getNumSteps(void)				{ return numSteps; }
@@ -61,9 +72,11 @@ public:
 	int			getNumTimepoints(void)			{ return numTimepoints; }
 
 	int			getModelType(void)				{ return modelType; }
-
+	void		print(void);
 
 private:
+
+	void		setArguments(int argc, char** argv);
 
 	// I/O
 	std::string inputDirPath;
@@ -79,6 +92,13 @@ private:
 	int seed;
 	int modelType;
 	bool fixBranches;
+	double tuningBM;
+	bool useJumpKernel;
+
+	// Stepping Stone
+	bool useSteppingStone;
+	int numSteppingStone;
+	double betaSteppingStone;
 
 	// CRP
 	double alphaCRP;
@@ -91,6 +111,8 @@ private:
 	int numCycles;
 	int printFreqMH;
 	int printFreqCRP;
+	int printFreqJump;
+	bool printStdOut;
 
 	// FFT
 	bool useFFT;

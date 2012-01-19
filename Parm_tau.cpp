@@ -118,6 +118,11 @@ double Tau::lnPriorRatio(void) {
 	return brlens[activeState]->lnProbability() - brlens[getInactiveState()]->lnProbability();
 }
 
+double Tau::lnPrior(void)
+{
+	return brlens[activeState]->lnProbability();
+}
+
 double Tau::change(void) {
 
 	numAttemptedChanges++;
@@ -148,7 +153,7 @@ std::string Tau::getParameterStr(void) {
 
 	double k = brlens[activeState]->getValue();
 	char tempCh[50];
-	sprintf(tempCh, "%1.3lf\t", k);
+	sprintf(tempCh, "%1.6lf\t", k);
 	std::string pStr = tempCh;
 	return pStr;
 }

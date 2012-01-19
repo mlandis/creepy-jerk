@@ -23,7 +23,6 @@
 #include <string>
 
 class Expression;
-//class FileHandler;
 class MbRandom;
 class Model;
 class Patron;
@@ -42,34 +41,18 @@ private:
 	void		runChain(void);
 	void		proposeState(void);
 	Table*		reseatPatron(void);
-	void		proposeSeating(void);
 	void		proposeParm(Parm*);
-	void		proposeBranch(void);
-	void		proposeBranchSwap(void);
-	void		proposeBranchRescale();
-	void		proposeParmRotate(void);
-	void		proposeSigmaSwap(void);
-	void		proposeParmShift(void);
-	void		proposeResizeJumps(void);
-	void		proposeAddJump(void);
-	void		proposeRemoveJump(void);
-
-
-	//Parm*		pickParm(void);
-	//Parm*		pickBranch(void);
-
-
+	void		proposeChangeJump(void);
+	void		proposeRidgeMove(void);
 
 	void		openFiles(std::string outputFilePath);
-
 	void		printChainState(int n, double v);
-	void		printPatronState(int n, Patron* p);
-	void		printTableState(int n);
 	void		printAcceptanceInfo(void);
 	std::string printBool(bool);
-	double		safeExp(double lnX);
 	std::string printInt(int);
-	std::string printTableChange(Table*, Table*);
+	std::string printDouble(double);
+	double		safeExp(double lnX);
+
 
 	Expression	*expressionPtr;
 	MbRandom	*randomPtr;
@@ -82,6 +65,8 @@ private:
 	int			numCycles;
 	int			printFreqMH;
 	int			printFreqCRP;
+	int			printFreqJump;
+	bool		printStdOut;
 
 	int			numTranscripts;
 	int			numTimepoints;
@@ -90,15 +75,21 @@ private:
 	int			numBranches;
 	int			numParms;
 
+	bool		useSteppingStone;
+	double		betaSteppingStone;
+
 	double		alphaCRP;
 	double		auxCRP;
 	bool		useCRP;
 
 	int			modelType;
 	bool		fixBranches;
+	bool		useJumpKernel;
 
 	std::vector<double> proposalProbs;
 	double		oldLnL, newLnL;
+	double		oldKb, newKb;	// lnL from BM
+	double		oldKj, newKj;	// lnL from jump kernel
 	std::string proposeStr;
 
 	int			patronIndex;

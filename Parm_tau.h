@@ -15,6 +15,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <stdio.h>
 #include <string>
 
 class MbRandom;
@@ -52,6 +53,7 @@ public:
 	BrLen*		getActiveBrLen(void) const		{return brlens[activeState]; }
 	BrLen*		getInactiveBrLen(void) const 	{return brlens[getInactiveState()]; }
 	double		lnPriorRatio(void);
+	double		lnPrior(void);
 	double		change(void);
 	double		getValue(void);
 	void		print(void);

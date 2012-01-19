@@ -12,7 +12,6 @@ CPP_SRCS += \
 ../Mcmc.cpp \
 ../Model.cpp \
 ../Parm.cpp \
-../Parm_alpha.cpp \
 ../Parm_lambda.cpp \
 ../Parm_sigma.cpp \
 ../Parm_tau.cpp \
@@ -20,6 +19,7 @@ CPP_SRCS += \
 ../Patron.cpp \
 ../Settings.cpp \
 ../Table.cpp \
+../Util.cpp \
 ../main.cpp 
 
 OBJS += \
@@ -31,7 +31,6 @@ OBJS += \
 ./Mcmc.o \
 ./Model.o \
 ./Parm.o \
-./Parm_alpha.o \
 ./Parm_lambda.o \
 ./Parm_sigma.o \
 ./Parm_tau.o \
@@ -39,6 +38,7 @@ OBJS += \
 ./Patron.o \
 ./Settings.o \
 ./Table.o \
+./Util.o \
 ./main.o 
 
 CPP_DEPS += \
@@ -50,7 +50,6 @@ CPP_DEPS += \
 ./Mcmc.d \
 ./Model.d \
 ./Parm.d \
-./Parm_alpha.d \
 ./Parm_lambda.d \
 ./Parm_sigma.d \
 ./Parm_tau.d \
@@ -58,6 +57,7 @@ CPP_DEPS += \
 ./Patron.d \
 ./Settings.d \
 ./Table.d \
+./Util.d \
 ./main.d 
 
 

@@ -39,22 +39,28 @@ Var& Var::operator=(const Var &t) {
 
 double Var::change(void) {
 
-	// update conditional likelihood and transition probability flags
-
-	// TODO: reinstate later
-	// Topology* t = treePtr->getActiveTopology();
-	// t->updateAllCls(true);
-	// t->updateAllTis(true);
-	// t->flipAllActiveCls();
-	// t->flipAllActiveTis();
-
-
-	// change the transition/transversion rate ratio
 	double tuning = log(3.0);
 	double oldK = k;
 	double newK = oldK * exp(tuning * (ranPtr->uniformRv() - 0.5));
 	k = newK;
 	return log(newK) - log(oldK);
+}
+
+double Var::changeTruncated(double truncateVal)
+{
+
+	/*
+	double oldK = k;
+	double newK = ranPtr->truncatedNormalRv(0, pow(truncateVal,0.5), oldK, 0.5);
+	k = newK;
+	return ( log(ranPtr->truncatedNormalPdf(0, pow(truncateVal,0.5), oldK, 0.5, newK))
+	       - log(ranPtr->truncatedNormalPdf(0, pow(truncateVal,0.5), newK, 0.5, oldK)) );
+   */
+	double oldK = k;
+	double newK = ranPtr->truncatedNormalRv(0, pow(truncateVal,0.5), oldK, 0.5); //.1*truncateVal);
+	k = newK;
+	return ( log(ranPtr->truncatedNormalPdf(0, pow(truncateVal,0.5), oldK, 0.5, newK))
+		   - log(ranPtr->truncatedNormalPdf(0, pow(truncateVal,0.5), newK, 0.5, oldK)) );
 }
 
 double Var::change(double newK)
@@ -119,6 +125,11 @@ double Sigma::lnPriorRatio(void) {
 	return vars[activeState]->lnProbability() - vars[getInactiveState()]->lnProbability();
 }
 
+double Sigma::lnPrior(void)
+{
+	return vars[activeState]->lnProbability();
+}
+
 double Sigma::change(void) {
 
 	numAttemptedChanges++;
@@ -149,7 +160,7 @@ std::string Sigma::getParameterStr(void) {
 
 	double k = vars[activeState]->getValue();
 	char tempCh[50];
-	sprintf(tempCh, "%1.3lf\t", k);
+	sprintf(tempCh, "%1.6lf\t", k);
 	std::string pStr = tempCh;
 	return pStr;
 }

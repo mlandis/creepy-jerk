@@ -33,7 +33,7 @@
 #include "Expression.h"
 #include "MbRandom.h"
 #include "Parm.h"
-#include "Parm_alpha.h"
+//#include "Parm_alpha.h"
 #include "Parm_lambda.h"
 #include "Parm_sigma.h"
 #include "Parm_tau.h"
@@ -63,11 +63,11 @@ public:
 	Var*								getActiveVar(void);
 	ExpMean*							getActiveExpMean(void);
 	Conc*								getActiveConc(void);
-	Alpha*								getAlpha(void)						{ return alpha; }
+//	Alpha*								getAlpha(void)						{ return alpha; }
 	int									getTableId(void)					{ return ++tableId; }
 	Parm*								pickParmAtRandom(Table* t);
 	Parm*								pickBranchAtRandom(Table* t);
-	Node*								pickNodeByBrLen(Table* t);
+	Node*								pickNodeByBrLen(void);
 	Table*								pickTableAtRandom(void);
 	void								keep(Parm* p);
 	void								restore(Parm* p);
@@ -75,30 +75,36 @@ public:
 	std::list<Table*>*					getTableListPtr(void)				{ return &tableList; }
 	std::list<Patron*>*					getPatronListPtr(void)				{ return &patronList; }
 	double								modelLogLikelihood(void);
-	double								locusLogLikelihood(Patron*);
+	double								modelLogPriorProbability(void);
+//	double								locusLogLikelihood(Patron*);
 	double								tableLogLikelihood(Table*);
-	double								tableLogLikelihoodFFT(Table*);
+//	double								tableLogLikelihoodFFT(Table*);
 	// jump sampling
-	void								sampleJumpsForTree(void);
-	void								sampleJumpsForBranch(int, double, double);
-	void								sampleJumpsForBranchGivenLambda(int, double);
-	void								sampleJumpsForBranchGivenSigma(int, double);
-	void								sampleJumpSizesForBranch(int j, double sig_jn);
-	void								sampleJumpSizesForTree(void);
-	double								getProposalRatioLambda(double oldLambda, double newLambda);
-	double								getProposalRatioSigma(double oldSigma, double newSigma);
+//	void								sampleJumpsForTree(void);
+//	void								sampleJumpsForBranch(int, double, double);
+//	void								sampleJumpsForBranchGivenLambda(int, double);
+//	void								sampleJumpsForBranchGivenSigma(int, double);
+//	void								sampleJumpSizesForBranch(int j, double sig_jn);
+//	void								sampleJumpSizesForTree(void);
+//	double								getProposalRatioLambda(double oldLambda, double newLambda);
+//	double								getProposalRatioSigma(double oldSigma, double newSigma);
+//	double								proposeAddJump(Node* p, const std::vector<Parm*>&, int space);
+//	double								proposeRemoveJump(Node* p, const std::vector<Parm*>&, int space);
+	double 								proposeJumpSize(Node* p, const std::vector<Parm*>&, int space);
+
 
 private:
-	void								setCharFunc(Table* t);
-	double								scaleIFFT(double, double, int);
-	gsl_complex							complexPdf(double, double, double, double); // compound Poisson process w/ skewed Normal
+	//void								setCharFunc(Table* t);
+	//double								scaleIFFT(double, double, int);
+	//gsl_complex							complexPdf(double, double, double, double); // compound Poisson process w/ skewed Normal
 	//  gsl_complex							charFunc(double, double, double);
-	gsl_complex							complexPdf(double, double, double, double, double); // jump-diffusion process w/ Normal (non-BM)
-	gsl_complex							charFunc(double, double, const std::vector<double>&);
-	double								trapInt(double* fn);
+	//gsl_complex							complexPdf(double, double, double, double, double); // jump-diffusion process w/ Normal (non-BM)
+	//gsl_complex							charFunc(double, double, const std::vector<double>&);
+	//double								trapInt(double* fn);
 
 	// void								initializeCondLikes(void);
-	void								initializeFFT(void);
+//	void								initializeFFT(void);
+	double								jumpLnLikelihoodForNode(Node* p, const std::vector<Parm*>&, int space);
 	void								initializeParms(void);
 	void								initializeModelType(void);
 	void								initializeTips(void);
@@ -118,6 +124,13 @@ private:
 	int numTranscripts;
 	int numTimepoints;
 
+	double tuningBM;
+	bool useJumpKernel;
+	bool printStdOut;
+
+	bool useSteppingStone;
+	double betaSteppingStone;
+
 	// NOTE: will want clever pointing implementation for larger dataset.
 	double* like; // NOTE: fixed number of nodes; single var. with additional dimension when topology introduced
 	double* tip1;
@@ -129,6 +142,7 @@ private:
 	//double***** clsPtrUpL[2];
 	//double***** clsPtrUpR[2];
 
+/*
 	bool useFFT;
 	int numSteps;
 	int halfSteps;
@@ -140,8 +154,11 @@ private:
 
 	CondLikes* condLikes;
 
+
 	bool useCRP;
 	Alpha* alpha;
+*/
+
 
 	bool fixBranches;
 	int modelType;

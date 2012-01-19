@@ -31,56 +31,39 @@ Node::Node(void) {
 	mu = 0.0;
 	sigma = 0.0;
 	k = 0.0;
+	kb = 0.0;
+	kj = 0.0;
 
 	// sampled jump values
 	jumpCount[0] = 0;
-	//lnProbJumpCount[0] = 0.0;
-	//jumpSize[0].push_back(0.0);
-	//lnProbJumpSize[0].push_back(0.0);
+	jumpCount[1] = 0;
+	jumpSize[0].clear();
+	jumpSize[1].clear();
 	sumJumpSize[0] = 0.0;
-	//sumLnProbJumpSize[0] = 0.0;
+	sumJumpSize[1] = 0.0;
 
 }
 
 void Node::addJump(double j, int space)
 {
-	std::cout << "OK333\n";
-
 	jumpCount[space] = jumpCount[space] + 1;
-	std::cout << "OK3\n";
-	//lnProbJumpCount[space] = lnPrJumpCount;
-	std::cout << "OK3\n";
-
 	jumpSize[space].push_back(j);
-	//lnProbJumpSize[space].push_back(lnPrJumpSize);
-
-	//std::cout << "OK4\n";
 	sumJumpSize[space] += j;
-	//sumLnProbJumpSize[space] += lnPrJumpSize;
-	//std::cout << "OK5\n";
 }
 
 void Node::removeJump(int j, int space)
 {
 	double x = jumpSize[space][j];
-	//double p = lnProbJumpSize[space][j];
-
 	jumpCount[space] = jumpCount[space] - 1;
-	//lnProbJumpCount[space] = lnPrJumpCount;
-
 	jumpSize[space].erase(jumpSize[space].begin() + j);
-	//lnProbJumpSize[space].erase(lnProbJumpSize[space].begin() + j);
 	sumJumpSize[space] -= x;
-	//sumLnProbJumpSize[space] -= p;
-
 }
 
-void Node::copySpace(void)
+void Node::copySpace(int i, int j)
 {
-	int inactiveParm = activeParm == 0 ? 1 : 0;
-	jumpCount[activeParm] = jumpCount[inactiveParm];
-	jumpSize[activeParm] = jumpSize[inactiveParm];
-	sumJumpSize[activeParm] = sumJumpSize[inactiveParm];
+	jumpCount[i] = jumpCount[j];
+	jumpSize[i] = jumpSize[j];
+	sumJumpSize[i] = sumJumpSize[j];
 }
 
 Node::~Node(void) {
@@ -90,8 +73,6 @@ Node::~Node(void) {
 
 
 Topology::Topology(MbRandom *rp, Expression *ep, double vp) {
-
-	std::cout << "INITIALIZING: Topology\n";
 
 	// set base state for some pointers
 	nodes = NULL;
@@ -105,19 +86,26 @@ Topology::Topology(MbRandom *rp, Expression *ep, double vp) {
 	treeLength = 0.0;
 	numJumps = 0;
 
+	//if (sp->getPrintStdOut())
+	{
+		std::cout << "INITIALIZING: Topology\n";
+	}
+
 	// build a random tree
 	buildRandomTree(ep);
 	initializeTaxonBipartitions();
 	setBranchRatios();
 	getTaxonBipartitions();
-	print();
-
-	std::cout << "\n";
+	//if (sp->getPrintStdOut())
+	{
+		print();
+		std::cout << "\n";
+	}
 }
 
 Topology::Topology(MbRandom *rp, Expression *ep, Settings *sp, double vp) {
 
-	std::cout << "INITIALIZING: Topology\n";
+
 
 	// set base state for some pointers
 	nodes = NULL;
@@ -131,6 +119,11 @@ Topology::Topology(MbRandom *rp, Expression *ep, Settings *sp, double vp) {
 	brlenLambda = vp;
 	treeLength = 0.0;
 	numJumps = 0;
+
+	if (sp->getPrintStdOut())
+	{
+		std::cout << "INITIALIZING: Topology\n";
+	}
 
 	// get Newick string
 	std::ifstream treeFileStream;
@@ -149,9 +142,12 @@ Topology::Topology(MbRandom *rp, Expression *ep, Settings *sp, double vp) {
 	initializeTaxonBipartitions();
 	setBranchRatios();
 	getTaxonBipartitions();
-	print();
 
-	std::cout << "\n";
+	if (sp->getPrintStdOut())
+	{
+		print();
+		std::cout << "\n";
+	}
 }
 
 Topology::Topology(Topology &t) {
@@ -338,7 +334,6 @@ void Topology::buildTreeFromNewickString(Expression *ep, std::string &ts) {
 	// initialize the branch lengths
 	for (int i = 0; i < numNodes; i++) {
 		nodes[i].setV(ranPtr->exponentialRv(brlenLambda));
-		treeLength += nodes[i].getV();
 	}
 
 	// set the taxon names
@@ -583,16 +578,17 @@ void Topology::setBranchRatios(void)
 		Node *p = &nodes[n];
 		if (p->getAnc() != NULL)
 		{
-			p->setRatio(p->getV() / treeLength);
+			p->setRatio( p->getV() / treeLength);
 		}
 	}
 }
 
+
+/*
 double Topology::proposeAddJump(double lambda, double sigma, int space)
 {
 	int u = ranPtr->uniformRv();
 	double sumLength = 0.0;
-	//int branchJumpCount = 0;
 	Node* p = NULL;
 
 	// select a branch proportional to its length
@@ -603,10 +599,8 @@ double Topology::proposeAddJump(double lambda, double sigma, int space)
 	}
 
 	double x = ranPtr->normalRv(0.0, sigma);
-	//double lnJumpCountProb = log(ranPtr->poissonProb(lambda, branchJumpCount + 1));
-	//double lnJumpSizeProb = ranPtr->lnNormalPdf(0.0, sigma, x);
 
-	std::cout << "OK2\n";
+	// add jump to node
 	p->addJump(x, space);
 
 	return 1.0 / ((numJumps + 1) * ranPtr->lnNormalPdf(0.0, sigma, x) * p->getRatio());
@@ -634,15 +628,16 @@ double Topology::proposeRemoveJump(double lambda, double sigma, int space)
 
 	return (numJumps + 1) * ranPtr->lnNormalPdf(0.0, sigma, x) * p->getRatio();
 }
+*/
 
-void Topology::copyNodeSpaces(void)
+void Topology::copyNodeSpaces(int i, int j)
 {
 	Node* p = NULL;
 
 	for (int n = 0; n < numNodes; n++)
 	{
 		p = getNode(n);
-		p->copySpace();
+		p->copySpace(i, j);
 	}
 }
 
@@ -726,6 +721,83 @@ void Topology::getDownPassSequence(void) {
 	passDn(root, &i);
 }
 
+Node* Topology::getRandomNode(void) {
+
+	int u = ranPtr->uniformRv() * numNodes;
+	return &nodes[u];
+}
+
+Node* Topology::getRandomNodeWithJumps(void) {
+
+	int u = ranPtr->uniformRv() * numJumps;
+	int jumpSum = 0;
+	int i = 0;
+	for ( ; i < numNodes; i++)
+	{
+		jumpSum += nodes[i].getJumpCount(0);
+		if (jumpSum > u)
+		{
+			//std::cout << "remove jump " << i << "\n";
+			return &nodes[i];
+		}
+	}
+	std::cout << "ERROR: attempted to remove a jump when jumpCount == 0\n";
+	return NULL;
+}
+
+Node* Topology::getRandomNodeNotRoot(void) {
+
+	if (numNodes < 1) return NULL;
+
+	Node* p = NULL;
+	do
+	{
+		p = getRandomNode();
+	}while(p->getAnc() == NULL);
+
+	return p;
+}
+
+Node* Topology::getRandomNodeByLength(void) {
+
+//	std::cout << "treeLength\t" << treeLength << "\n";
+
+	double lengthSum = 0.0;
+	for (int j = 0; j < numNodes; j++)
+	{
+		lengthSum += nodes[j].getRatio();
+	}
+
+
+	double u = ranPtr->uniformRv() * lengthSum;
+	double l = 0.0;
+	int i = 0;
+	for (; i < numNodes; i++)
+	{
+		l += nodes[i].getRatio();
+		//std::cout << l << "\t" << u << "\t" << i << "\n";
+		if (l > u)
+		{
+			return &nodes[i];
+		}
+	}
+
+	return NULL;
+}
+
+Node* Topology::getRandomNodeNotRootByLength(void) {
+
+	if (numNodes < 1) return NULL;
+
+	Node* p = NULL;
+	do
+	{
+		p = getRandomNode();
+	}while(p->getAnc() == NULL);
+
+	return p;
+}
+
 void Topology::passDn(Node *p, int *x) {
 
 	if (p != NULL) {
@@ -739,6 +811,7 @@ void Topology::passDn(Node *p, int *x) {
 void Topology::print(void) {
 
 	showNodes(root, 0);
+	std::cout << "treeLength = " << treeLength << "\n";
 }
 
 void Topology::showNodes(Node *p, int indent) {
@@ -857,42 +930,56 @@ void Topology::printTaxonBipartitions(void) {
 	}
 }
 
-void Topology::printJumpSamples(void) {
+void Topology::printJumpSamples(int space) {
 
-	std::cout << std::setw(10) << "i\tn\tlnpr_n\tx\tlnpr_x\tx_i\n";
+	std::cout << std::setw(10) << "i\tv\tn\tx\tx_i\n";
 
-	std::vector<double>::iterator it_x, it_p;
+	std::vector<double>::iterator it_x;
 	for (int n = 0; n < numNodes; n++) {
 		Node* p = &nodes[n];
-		std::vector<double> jumpSize, lnProbJumpSize;
+		std::vector<double> jumpSize;
 		if (p->getAnc() != NULL) {
-			int activeParm = p->getActiveParm();
-			jumpSize = p->getJumpSize(activeParm);
-			lnProbJumpSize = p->getLnProbJumpSize(activeParm);
-			std::cout << p->getIndex() << "\t" << p->getJumpCount(activeParm) << "\t" << p->getLnProbJumpCount(activeParm) << "\t";
-			std::cout << p->getSumJumpSize(activeParm) << "\t" << p->getSumLnProbJumpSize(activeParm) << "";
+			jumpSize = p->getJumpSize(space);
+			std::cout << p->getIndex() << "\t" << p->getV() << "\t" << p->getJumpCount(space) << "\t";
+			std::cout << p->getSumJumpSize(space) << "\t";
 
 
-			if (p->getJumpCount(activeParm) != (int)(p->getJumpSize(activeParm).size()))
+			if (p->getJumpCount(space) != (int)(p->getJumpSize(space).size()))
 				std::cerr << "ERROR: jumpCount != jumpSize.size()\n";
 
-			if (p->getJumpCount(activeParm) != 0)
+			if (p->getJumpCount(space) != 0)
 			{
 				std::cout << "\t[";
 
-				it_x = p->getJumpSize(activeParm).begin();
-				it_p = p->getLnProbJumpSize(activeParm).begin();
+				it_x = p->getJumpSize(space).begin();
 
-				while (it_x != p->getJumpSize(activeParm).end() && it_p != p->getLnProbJumpSize(activeParm).end())
+				while (it_x != p->getJumpSize(space).end())
 				{
-					std::cout << " " << *it_x << "(" << *it_p << ")";
+					std::cout << " " << *it_x;
 					it_x++;
-					it_p++;
 				}
 				std::cout << " ]";
 			}
 
 			std::cout << std::endl;
+		}
+	}
+
+	std::cout << "numJumps:\t" << numJumps << "\n";
+}
+
+void Topology::printJumpSizes(int space) {
+
+	std::cout << std::setw(10) << "i\tv\tx\n";
+
+	std::vector<double>::iterator it_x;
+	for (int n = 0; n < numNodes; n++)
+	{
+		Node* p = &nodes[n];
+		std::vector<double> jumpSize;
+		if (p->getAnc() != NULL)
+		{
+			std::cout << p->getIndex() << "\t" << p->getV() << "\t" << p->getSumJumpSize(space) << "\n";
 		}
 	}
 }
@@ -905,8 +992,6 @@ void Topology::printJumpSummary(void) {
 	double sumLnProbJumpCount = 0.0;
 
 	double jumpSize = 0.0;
-//	double meanJumpSize = 0.0;
-//	double varJumpSize = 0.0;
 	double lnProbSumJumpSize = 0.0;
 	double sumLnProbSumJumpSize = 0.0;
 	double sumJumpSize = 0.0;
@@ -996,6 +1081,11 @@ double Tree::change(void) {
 double Tree::lnPriorRatio(void) {
 
 	return trees[activeState]->lnProbability() - trees[getInactiveState()]->lnProbability();
+}
+
+double Tree::lnPrior(void)
+{
+	return trees[activeState]->lnProbability();
 }
 
 double Tree::getValue(void)

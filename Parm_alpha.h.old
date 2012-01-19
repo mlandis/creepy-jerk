@@ -54,6 +54,7 @@ public:
 	Conc* getActiveConc(void) const { return concs[activeState]; }
 	Conc* getInactiveConc(void) const	{ return concs[getInactiveState()]; }
 	double		lnPriorRatio(void);
+	double		lnPrior(void);
 	double		change(void);
 	double		getValue(void);
 	void		print(void);

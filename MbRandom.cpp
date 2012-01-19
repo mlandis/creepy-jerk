@@ -259,7 +259,7 @@ double MbRandom::gammaRv(double a, double b) {
  *
  * \brief Gamma probability density.
  * \param a is the shape parameter of the gamma. 
- * \param b is the scale parameter of the gamma. 
+ * \param b is the scale parameter of the gamma. 	// Actually rate parameter 01-03-12
  * \param x is the gamma random variable. 
  * \return Returns the probability density.
  * \throws Does not throw an error.

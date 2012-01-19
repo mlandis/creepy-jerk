@@ -28,8 +28,6 @@
 int main(int argc, char *argv[])
 {
 
-	std::cout << "test2\n";
-
 	Settings* mySettings = new Settings(argc, argv);
 
 	MbRandom* myRandom = new MbRandom(mySettings->getSeed());

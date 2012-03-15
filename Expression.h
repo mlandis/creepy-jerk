@@ -42,9 +42,12 @@ public:
 	double										getExpr(int trans, int taxon, int time)	{ return transExpr[trans][taxon][time]; }
 	const std::vector<double>&					getExpr(int trans, int taxon)			{ return transExpr[trans][taxon]; }
 	const std::vector<std::vector<double> >&	getExpr(int trans)						{ return transExpr[trans]; }
+	double										getData(int taxon)						{ return data[taxon]; }
 
 	const std::list<Table*>&					getTableList(void)						{ return tableList; }
 	const std::list<Patron*>&					getPatronList(void)						{ return patronList; }
+
+	void										print(void);
 
 private:
 	int numTaxa;
@@ -52,9 +55,11 @@ private:
 	int numTranscripts;
 	double tipStdDev;
 
+	// [trans][taxa][time]
 	std::vector<std::vector<std::vector<double> > > transExpr;
 	std::list<Patron*> patronList;
 	std::list<Table*> tableList;
+	std::vector<double> data;
 
 	std::vector<std::string> taxonNames;
 

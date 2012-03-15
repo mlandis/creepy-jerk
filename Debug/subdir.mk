@@ -12,6 +12,8 @@ CPP_SRCS += \
 ../Mcmc.cpp \
 ../Model.cpp \
 ../Parm.cpp \
+../Parm_alpha.cpp \
+../Parm_kappa.cpp \
 ../Parm_lambda.cpp \
 ../Parm_sigma.cpp \
 ../Parm_tau.cpp \
@@ -31,6 +33,8 @@ OBJS += \
 ./Mcmc.o \
 ./Model.o \
 ./Parm.o \
+./Parm_alpha.o \
+./Parm_kappa.o \
 ./Parm_lambda.o \
 ./Parm_sigma.o \
 ./Parm_tau.o \
@@ -50,6 +54,8 @@ CPP_DEPS += \
 ./Mcmc.d \
 ./Model.d \
 ./Parm.d \
+./Parm_alpha.d \
+./Parm_kappa.d \
 ./Parm_lambda.d \
 ./Parm_sigma.d \
 ./Parm_tau.d \
@@ -65,7 +71,7 @@ CPP_DEPS += \
 %.o: ../%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	g++ -O3 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

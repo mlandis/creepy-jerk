@@ -47,6 +47,7 @@ private:
 
 	void		openFiles(std::string outputFilePath);
 	void		printChainState(int n, double v);
+	void		printChainJumps(int n);
 	void		printAcceptanceInfo(void);
 	std::string printBool(bool);
 	std::string printInt(int);
@@ -66,7 +67,7 @@ private:
 	int			printFreqMH;
 	int			printFreqCRP;
 	int			printFreqJump;
-	bool		printStdOut;
+	int			printFreqStdOut;
 
 	int			numTranscripts;
 	int			numTimepoints;
@@ -94,7 +95,7 @@ private:
 
 	int			patronIndex;
 
-	std::ofstream parmFileStrm, tableFileStrm, patronFileStrm;
+	std::ofstream parmFileStrm, jumpFileStrm, tableFileStrm, patronFileStrm;
 
 
 };

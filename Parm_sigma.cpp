@@ -39,11 +39,24 @@ Var& Var::operator=(const Var &t) {
 
 double Var::change(void) {
 
+
+	//John's proposal
+
 	double tuning = log(3.0);
 	double oldK = k;
 	double newK = oldK * exp(tuning * (ranPtr->uniformRv() - 0.5));
 	k = newK;
 	return log(newK) - log(oldK);
+
+
+	//Gamma proposal
+	/*
+	double tuning = 5.0;
+	double oldK = k;
+	double newK = ranPtr->gammaRv(tuning, tuning/k);
+	k = newK;
+	return ranPtr->lnGammaPdf(tuning, tuning/k, oldK) - ranPtr->lnGammaPdf(tuning, tuning/oldK, k);
+	*/
 }
 
 double Var::changeTruncated(double truncateVal)

@@ -45,9 +45,9 @@ public:
 	bool		getFixBranches(void)			{ return fixBranches; }
 	double		getTuningBM(void)				{ return tuningBM; }
 	bool		getUseJumpKernel(void)			{ return useJumpKernel; }
+	double		getSigmaJumpProposal(void)		{ return sigmaJumpProposal; }
 
 	bool		getUseSteppingStone(void)		{ return useSteppingStone; }
-	int			getNumSteppingStone(void)		{ return numSteppingStone; }
 	double		getBetaSteppingStone(void)		{ return betaSteppingStone; }
 
 	double		getAlphaCRP(void)				{ return alphaCRP; }
@@ -60,6 +60,7 @@ public:
 	int			getPrintFreqMH(void)			{ return printFreqMH; }
 	int			getPrintFreqCRP(void)			{ return printFreqCRP; }
 	int			getPrintFreqJump(void)			{ return printFreqJump; }
+	int			getPrintFreqStdOut(void)		{ return printFreqStdOut; }
 	bool		getPrintStdOut(void)			{ return printStdOut; }
 
 	bool		getUseFFT(void)					{ return useFFT; }
@@ -70,6 +71,12 @@ public:
 
 	int			getNumTaxa(void)				{ return numTaxa; }
 	int			getNumTimepoints(void)			{ return numTimepoints; }
+
+	//GSL
+	int			getWorkspaceSize(void)			{ return workspaceSize; }
+	int			getTrigTableSize(void)			{ return trigTableSize; }
+	double		getIntegralLength(void)			{ return integralLength; }
+	double		getIntegralError(void)			{ return integralError; }
 
 	int			getModelType(void)				{ return modelType; }
 	void		print(void);
@@ -88,16 +95,17 @@ private:
 	std::string outputFileName;
 	std::string simName;
 
+
 	// Model
 	int seed;
 	int modelType;
 	bool fixBranches;
 	double tuningBM;
 	bool useJumpKernel;
+	double sigmaJumpProposal;
 
 	// Stepping Stone
 	bool useSteppingStone;
-	int numSteppingStone;
 	double betaSteppingStone;
 
 	// CRP
@@ -112,6 +120,7 @@ private:
 	int printFreqMH;
 	int printFreqCRP;
 	int printFreqJump;
+	int printFreqStdOut;
 	bool printStdOut;
 
 	// FFT
@@ -124,6 +133,12 @@ private:
 	// Expression
 	int numTaxa;
 	int numTimepoints;
+
+	// GSL
+	int workspaceSize;
+	int trigTableSize;
+	double integralLength;
+	double integralError;
 };
 
 #endif /* SETTINGS_H_ */

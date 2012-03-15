@@ -13,6 +13,142 @@
 
 #define REAL(z,i) ((z)[2*(i)])
 #define IMAG(z,i) ((z)[2*(i)+1])
+//#define PI 3.1415926535
+
+#define DEBUG_MSG_QAWO 0
+#define DEBUG_QAWO 0
+#define DEBUG_BESSEL 0
+
+#define ALPHA_STABLE_NUMINT 1
+#define JUMP_NORM_NUMINT 2
+#define JUMP_NORM_PDF 3
+#define VAR_GAMMA_BESSEL 4
+#define BM_ONLY 5
+#define VAR_GAMMA_NUMINT 6
+#define BM_JUMP_PDF 7
+#define LAPLACE_NUMINT 8
+#define SKEW_NORMAL_NUMINT 9
+
+#define PDF 0
+#define NUMINT 1
+#define BESSEL 2
+
+double poissonNormal(double k, void* params)
+{
+	// params[0] == sig_bm
+	// params[1] == lam_jn
+	// params[2] == sig_jn
+	// params[3] == t
+	// params[4] == tuningBM
+	// params[5] == x
+
+	std::vector<double> p =	*(std::vector<double>*)params;
+	double sig_bm = p[0];
+	double lam_jn = p[1];
+	double sig_jn = p[2];
+	double t = p[3];
+	double tuningBM = p[4];
+	double x = p[5];
+
+	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double right = t * lam_jn * ( exp(-pow(sig_jn,2) * k * k / (2 * x * x) ) - 1 );
+	return exp(left + right);
+}
+
+
+double alphaStable(double k, void* params)
+{
+	// params[0] == sig_bm
+	// params[1] == alpha
+	// params[2] == c
+	// params[3] == t
+	// params[4] == tuningBM
+	// params[5] == x
+
+	std::vector<double> p =	*(std::vector<double>*)params;
+	double sig_bm = p[0];
+	double alpha = p[1];
+	double c = p[2];
+	double t = p[3];
+	double tuningBM = p[4];
+	double x = p[5];
+
+	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double right = -pow(fabs(c * k / x), alpha) * t;
+
+	return exp(left + right);
+}
+
+// returns half of a skew normal
+double halfSkewNormal(double k, void* params)
+{
+	// params[0] == sig_bm
+	// params[1] == lam_jn
+	// params[2] == sig_jn
+	// params[3] == alpha
+	// params[4] == t
+	// params[5] == tuningBM
+	// params[6] == x
+
+	std::vector<double> p =	*(std::vector<double>*)params;
+	double sig_bm = p[0];
+	double alpha = p[1];
+	double c = p[2];
+	double t = p[3];
+	double tuningBM = p[4];
+	double x = p[5];
+
+	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double right = -pow(fabs(c * k / x), alpha) * t;
+
+	return exp(left + right);
+}
+
+double varianceGamma(double k, void* params)
+{
+	// params[0] == sig_bm
+	// params[1] == kap_vg
+	// params[2] == sig_vg
+	// params[3] == t
+	// params[4] == tuningBM
+	// params[5] == x
+
+	std::vector<double> p =	*(std::vector<double>*)params;
+	double sig_bm = p[0];
+	double kap_vg = p[1];
+	double sig_vg = p[2];
+	double t = p[3];
+	double tuningBM = p[4];
+	double x = p[5];
+
+	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double right = pow(1.0 + sig_vg * sig_vg * k * k / (2 * x * x * kap_vg) , -kap_vg * t);
+
+	return exp(left + right);
+}
+
+double doubleExponential(double k, void* params)
+{
+	// params[0] == sig_bm
+	// params[1] == kap_vg
+	// params[2] == sig_vg
+	// params[3] == t
+	// params[4] == tuningBM
+	// params[5] == x
+
+	std::vector<double> p =	*(std::vector<double>*)params;
+	double sig_bm = p[0];
+	double lam_de = p[1];
+	double bee_de = p[2];
+	double t = p[3];
+	double tuningBM = p[4];
+	double x = p[5];
+
+	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double right = t * lam_de * ( exp(-pow(1,2) * k * k / (2 * x * x) ) - 1 );
+
+	return exp(left + right);
+}
 
 Model::Model(Expression* ep, MbRandom* rp, Settings* sp, Topology* tp)
 {
@@ -28,8 +164,6 @@ Model::Model(Expression* ep, MbRandom* rp, Settings* sp, Topology* tp)
 	numTranscripts = expressionPtr->getNumTranscripts();
 	numTimepoints = expressionPtr->getNumTimepoints();
 
-//	useFFT = settingsPtr->getUseFFT();
-//	useCRP = settingsPtr->getUseCRP();
 	modelType = settingsPtr->getModelType();
 	fixBranches = settingsPtr->getFixBranches();
 
@@ -37,6 +171,7 @@ Model::Model(Expression* ep, MbRandom* rp, Settings* sp, Topology* tp)
 
 	tuningBM = settingsPtr->getTuningBM();
 	useJumpKernel = settingsPtr->getUseJumpKernel();
+	sigmaJumpProposal = settingsPtr->getSigmaJumpProposal();
 	printStdOut = settingsPtr->getPrintStdOut();
 
 	useSteppingStone = settingsPtr->getUseSteppingStone();
@@ -44,25 +179,10 @@ Model::Model(Expression* ep, MbRandom* rp, Settings* sp, Topology* tp)
 
 	initializeParms();
 	initializeTips();
-	//initializeNodes();
-
-	/*
-	if (useFFT)
-	{
-		initializeFFT();
-		condLikes = new CondLikes(expressionPtr, settingsPtr);
-	}
-	*/
-
-
-	//condLikes->print();
-
-	//initializeCondLikes();
-
+	initializeGSL();
 }
 
 Model::~Model(void) {
-	// TODO Auto-generated destructor stub
 
 	for (std::list<Table*>::iterator it_t = tableList.begin(); it_t != tableList.end(); it_t++)
 	{
@@ -72,20 +192,7 @@ Model::~Model(void) {
 	{
 		delete (*it_p);
 	}
-
-	/*
-	if (useFFT)
-	{
-		delete [] theta;
-		delete [] likeVals;
-		delete [] like;
-		delete [] tip1;
-		delete [] tip2;
-		delete condLikes;
-	}
-
-	delete alpha;
-	*/
+	freeGSL();
 }
 
 
@@ -93,49 +200,89 @@ void Model::initializeParms(void)
 {
 	if (printStdOut) std::cout << "INITIALIZING: Parameter Classes (Tables)\n";
 
-	if (modelType == 0) // Poisson-Normal + BM
+
+	// create initial parameters
+	std::vector<Parm*> initialParms;
+	initialParms.clear();
+
+	if (modelType == 0) // undef
 	{
-		proposalProbs.push_back(1.5);			// Sigma-BM
-		if (fixBranches)
-			proposalProbs.push_back(1.0);		// Lambda-JN
-		else if (!fixBranches)
-			proposalProbs.push_back(0.0);		// Lambda-JN
-		proposalProbs.push_back(1.0);			// Sigma-JN
+		;
+	}
+	else if (modelType == ALPHA_STABLE_NUMINT) // NumInt Alpha-stable + BM
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Alpha(randomPtr, "Alf-AS"));
+		initialParms.push_back(new Sigma(randomPtr, "Cee-AS"));
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		useJumpKernel = true;
+		evalType = NUMINT;
+		F.function = &alphaStable;
 
 	}
-	else if (modelType == 1) // Poisson-Cauchy + BM
+	else if (modelType == JUMP_NORM_NUMINT) // NumInt Poisson-Normal + BM
 	{
-		proposalProbs.push_back(1.0);			// Sigma-BM
-		proposalProbs.push_back(1.0);			// Lambda-JC
-		proposalProbs.push_back(1.0);			// Gamma-JC
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		useJumpKernel = true;
+		evalType = NUMINT;
+		F.function = &poissonNormal;
 
 	}
-	else if (modelType == 2) // Poisson-Exponential + BM
+	else if (modelType == JUMP_NORM_PDF) // Pdf Sampled Poisson-Normal + BM
 	{
-		proposalProbs.push_back(1.0);			// Sigma-BM
-		proposalProbs.push_back(1.0);			// Lambda-JE
-		proposalProbs.push_back(1.0);			// a-JE
-
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		useJumpKernel = true;
+		evalType = PDF;
 	}
-	else if (modelType == 3) // Sampled Poisson-Normal + BM
+	else if (modelType == VAR_GAMMA_BESSEL) // Bessel Variance Gamma
 	{
-		proposalProbs.push_back(1.0);			// Sigma-BM
-		proposalProbs.push_back(1.0);			// Lambda-JN
-		proposalProbs.push_back(1.0);			// Sigma-JN
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));//, 0.05));
+		initialParms.push_back(new Kappa(randomPtr, "Kap-VG"));//, 10.0));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));//, 0.1));
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		useJumpKernel = true;
+		evalType = BESSEL;
+		tuningBM = 1.0;							// does not require conditioning on brLen
+		F.function = &varianceGamma;
 	}
-	else if (modelType == 4) // Chaix et al
+	else if (modelType == BM_ONLY) // Brownian motion only
 	{
-		proposalProbs.push_back(1.0);			// Sigma-N
-		proposalProbs.push_back(1.0);			// Lambda-N
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		proposalProbs.push_back(1.0);
+		useJumpKernel = false;
 	}
-	else if (modelType == 5) // Brownian motion
+	else if (modelType == VAR_GAMMA_NUMINT) // NumInt Variance Gamma
 	{
-		proposalProbs.push_back(1.0);			// Sigma-BM
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Kap-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		useJumpKernel = true;
+		evalType = NUMINT;
+		F.function = &varianceGamma;
 	}
-	else if (modelType == 6) // Pure Normal jump process
+	else if (modelType == BM_JUMP_PDF) // Pdf Brownian motion (w/ fake jump)
 	{
-		proposalProbs.push_back(1.0);			// Lambda-JN
-		proposalProbs.push_back(1.0);			// Sigma-JN
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		proposalProbs.push_back(1.0);
+		useJumpKernel = true;
+		evalType = PDF;
 	}
 	else
 	{
@@ -153,85 +300,8 @@ void Model::initializeParms(void)
 	tableList = expressionPtr->getTableList();
 	patronList = expressionPtr->getPatronList();
 
-
-	// create initial parameters
-	std::vector<Parm*> initialParms;
-
-	if (modelType == 0) // Poisson-Normal + BM
-	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-		if (fixBranches)
-			initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
-		else if (!fixBranches)
-			initialParms.push_back(new Sigma(randomPtr, "Lam-JN", 1.0));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
-
-	}
-	else if (modelType == 1) // Poisson-Cauchy + BM
-	{
-		initialParms.push_back(new Sigma(randomPtr, "Sigma-BM"));
-		initialParms.push_back(new Sigma(randomPtr, "Lambda-K"));
-		initialParms.push_back(new Sigma(randomPtr, "Gamma-K"));
-
-	}
-	else if (modelType == 2) // Poisson-Exponential + BM
-	{
-		initialParms.push_back(new Sigma(randomPtr, "Sigma-BM"));
-		initialParms.push_back(new Sigma(randomPtr, "Lambda-K"));
-		initialParms.push_back(new Sigma(randomPtr, "a-K"));
-
-	}
-	else if (modelType == 3) // Sampled Poisson-Normal + BM
-	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
-	}
-	else if (modelType == 4) // Chaix et al.
-	{
-		initialParms.push_back(new Sigma(randomPtr, "Sigma-N"));
-		initialParms.push_back(new Lambda(randomPtr, "Lambda-N"));
-	}
-	else if (modelType == 5) // Brownian motion
-	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-	}
-	else if (modelType == 6) // Pure Normal jump
-	{
-		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
-	}
-	else
-	{
-		std::cerr << "Unrecognized modelType value: " << modelType << "\n";
-		exit(1);
-	}
-
-	// create initial branches
-	std::vector<Parm*> initialBranches;
-	for (int i = 0; i < numBranches; i++)
-	{
-		std::stringstream ss;
-		ss << i;
-		if (fixBranches)
-		{
-			double brlen = topologyPtr->getDownPassNode(i)->getV();
-			initialBranches.push_back(new Tau(randomPtr, "Tau-" + ss.str(), brlen));
-		}
-		else if (!fixBranches)
-		{
-			initialBranches.push_back(new Tau(randomPtr, "Tau-" + ss.str()));
-		}
-	}
-
-
 	tableList.front()->setParmVector(initialParms);
-	tableList.front()->setBranchVector(initialBranches);
-
-
-//	double a_alpha = settingsPtr->getACRP();
-//	double b_alpha = settingsPtr->getBCRP();
-//	alpha = new Alpha(randomPtr, this, a_alpha, b_alpha, "Alpha");
+	//tableList.front()->setBranchVector(initialBranches);
 
 	if (printStdOut) std::cout << "\n";
 }
@@ -244,115 +314,161 @@ void Model::initializeTips(void)
 
 	for (int j = 0; j < numTaxa; j++)
 	{
-		Node* n = topologyPtr->getNode(j);
-		//Node* n = topologyPtr->getDownPassNode(j);
-		//double x = expressionPtr->getExpr(0,j,0);
-		double x = (*it_p)->getData(j, 0);
-		//std::cout << n->getIndex() << "\t" << x << "\n";
-		n->setMu(x);
-		n->setSigma(0.0);
+		Node* p = topologyPtr->getNode(j);
+		//Node* n = topologyPtr->getDownPassNode(j); // wrong
+		//double x = expressionPtr->getExpr(0,j,0); // old Patron-based Expression
+		double x = expressionPtr->getData(j);
+		std::cout << "\t" << p->getName() << "\t" << p->getIndex() << "\t" << x << "\n";
+		p->setMu(x, 1);
+		p->setSigma(0.0, 1);
 		if (useJumpKernel)
 		{
-			n->setSumJumpSize(randomPtr->normalRv(0, 0.5));
+			p->setSumJumpSize(randomPtr->normalRv(0, 0.5), 1);
 		}
-		n->setK(0.0);
-		n->setKb(0.0);
-		n->setKj(0.0);
+		p->setK(0.0, 1);
+		p->setKb(0.0, 1);
+		p->setKj(0.0, 1);
+		p->copySpace(0, 1);
 	}
 
-	/*
-	std::cout << "--\n";
-	for (int j = 0; j < numNodes; j++)
-	{
-		Node* n = topologyPtr->getDownPassNode(j);
-		//double x = expressionPtr->getExpr(0,j,0);
-		std::cout << n->getIndex() << "\t" << n->getMu() << "\t" << n->getSigma() << "\t" << n->getK() << "\n";
-	}
-	*/
 	if (printStdOut) std::cout << "\n";
 }
 
-void Model::updateModel(void)
+void Model::initializeGSL(void)
 {
-	// perhaps unnecessary?
+
+	std::cout << "INITIALIZING: GSL memory\n";
+	workspaceSize = settingsPtr->getWorkspaceSize();
+	trigTableSize = settingsPtr->getTrigTableSize();
+	integralLength = settingsPtr->getIntegralLength();
+	integralError = settingsPtr->getIntegralError();
+
+	storeWorkspace = gsl_integration_workspace_alloc (workspaceSize);
+	cycleWorkspace = gsl_integration_workspace_alloc (workspaceSize);
+	trigTable = gsl_integration_qawo_table_alloc (0.0, integralLength, GSL_INTEG_COSINE, trigTableSize);
+	gsl_integration_qawo_table_set(trigTable, 1.0, trigTableSize, GSL_INTEG_COSINE);
+
+}
+
+void Model::freeGSL(void)
+{
+	gsl_integration_workspace_free(storeWorkspace);
+	gsl_integration_workspace_free(cycleWorkspace);
+	gsl_integration_qawo_table_free(trigTable);
 }
 
 double Model::proposeJumpSize(Node* p, const std::vector<Parm*>& parmVector, int space)
 {
-	//Table* t = tableList.front();
 	double lnProposalRatio = 0.0;
 
-
 	// normal jump kernel
-	if (modelType == 3)
+	if (modelType != BM_ONLY)
 	{
-		//double lam_jn = (t->getParmVector()[1])->getValue();
-		//double sig_jn = (t->getParmVector()[2])->getValue();
-
-
-		double sigma = 0.5; // prior for sigma? i.e. randomPtr->
-		double jumpSize = p->getSumJumpSize(0);
-		//double expJumpSize2 = exp(-pow(jumpSize,2));
-		//double u = randomPtr->uniformRv(0, 1 + expJumpSize2);
-
-		/*
-		// draw sumJumpSize == 0.0
-		if (u < expJumpSize2)
-		{
-			p->setSumJumpSize(0.0);
-
-			if (jumpSize == 0)
-			{
-				return lnProposalRatio;
-			}
-			else
-			{
-				return log( 0.5 * randomPtr->normalPdf(0.0, sigma, jumpSize) * (expJumpSize2 + 1) / expJumpSize2 );
-			}
-		}
-
-		// draw new sumJumpSize
-		else
-		{
-			double jumpSizeNew = randomPtr->normalRv(jumpSize, sigma);
-			double expJumpSizeNew2 = exp(-pow(jumpSizeNew,2));
-			p->setSumJumpSize(jumpSizeNew);
-
-			if (jumpSize == 0)
-			{
-				return log( expJumpSizeNew2 / (0.5 * randomPtr->normalPdf(0.0, sigma, jumpSizeNew) * (expJumpSizeNew2 + 1)) );
-			}
-			else
-			{
-				return lnProposalRatio = log( (expJumpSize2 + 1)    * randomPtr->normalPdf(jumpSizeNew, sigma, jumpSize)
-								   / ( (expJumpSizeNew2 + 1) * randomPtr->normalPdf(jumpSize, sigma, jumpSizeNew) ) );
-			}
-		}*/
-
-		double jumpSizeNew = randomPtr->normalRv(jumpSize, sigma);
+		double jumpSize = p->getSumJumpSize(space);
+		double jumpSizeNew = randomPtr->normalRv(jumpSize, sigmaJumpProposal);
 #if DEBUG2
 		std::cout << "\tjump at n" << p->getIndex() << ":\t" << jumpSize << " ->\t" << jumpSizeNew << "\n";
 #endif
-		//double expJumpSizeNew2 = exp(-pow(jumpSizeNew,2));
-		p->setSumJumpSize(jumpSizeNew);
-
+		p->setSumJumpSize(jumpSizeNew, space);
 		return lnProposalRatio;
 	}
 
-	std::cout << "ERROR: proposeJumpSize() bypassed all conditions\n";
+	// should never reach this
+	if (modelType != BM_ONLY)
+		std::cerr << "ERROR: proposeJumpSize() bypassed all conditions\n";
+
 	return lnProposalRatio;
 }
 
-
-double Model::jumpLnLikelihoodForNode(Node* p, const std::vector<Parm*>& parmVector, int space)
+void Model::updateGSL(void)
 {
+
+}
+
+double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, int space)
+{
+
 
 	Table* t = tableList.front();
 	double k = 0.0;
 	double newK = 0.0;
 
+	if (modelType == ALPHA_STABLE_NUMINT || modelType == JUMP_NORM_NUMINT || modelType == VAR_GAMMA_NUMINT)// || modelType == VAR_GAMMA_BESSEL)
+	{
+		double x = p->getSumJumpSize(space);
 
-	if (modelType == 3)
+
+#if DEBUG_QAWO
+		// "exact" prob
+		double sig_bm = (t->getParmVector()[0])->getValue();
+		double lam_jn = (t->getParmVector()[1])->getValue();
+		double sig_jn = (t->getParmVector()[2])->getValue();
+
+		double v = p->getV();
+		double w = v * (1.0 - tuningBM);
+
+		// REMOVE LATER
+		//return randomPtr->lnNormalPdf(0.0, sig_bm, x);
+
+		// sum over all possible numbers of jumps (truncated to n<100)
+		int n = 0;
+		do
+		{
+			if (lam_jn == 0.0)
+			{
+				double y = randomPtr->lnNormalPdf(0.0, pow(w, 0.5) * sig_bm, x);
+				return y;
+			}
+			newK = randomPtr->poissonProb(lam_jn * v, n);
+			newK *= randomPtr->normalPdf(0.0, pow(n * pow(sig_jn,2) + w * pow(sig_bm,2), 0.5), x);
+			expected += newK;
+			n++;
+		}while(n < 100);
+#endif
+
+		//tuningBM = 0.9995;
+
+		// pass GSL_function F with params
+		std::vector<double> params;
+		params.push_back((t->getParmVector()[0])->getValue()); // sig_bm
+		params.push_back((t->getParmVector()[1])->getValue()); // lam_jn OR alf_as
+		params.push_back((t->getParmVector()[2])->getValue()); // sig_jn OR cee_as
+		params.push_back(p->getV());
+		params.push_back(tuningBM);
+		params.push_back(fabs(x));
+		F.params = &params;
+
+	//	tuningBM = 1.0;
+
+		// integrate
+		double a = 0.0; // integrate from a to +Inf
+	//	double omega = 1.0;//p->getSumJumpSize(space);
+		double result;
+		double error;
+
+#if DEBUG_QAWO
+		 printf ("x %.8f\tsig_bm %.8f\tlam_jn %.8f\tsig_jn %.8f\tt %.8f\n", x, sig_bm, lam_jn, sig_jn, v);
+#endif
+
+		gsl_integration_qawf(&F, a, integralError, workspaceSize, storeWorkspace, cycleWorkspace, trigTable, &result, &error);
+	  //  gsl_integration_qawo(&F, a, 0, 1e-7, workspaceSize, storeWorkspace, trigTable, &result, &error);
+		k = log(result/(PI * fabs(x)));
+
+#if DEBUG_MSG_QAWO
+		printf ("\tNumInt\n");
+		printf ("\t\tk               = % .18f\n", k);
+		printf ("\t\tresult          = % .18f\n", result/(PI*fabs(x)));
+		// printf ("exact result	  = % .18f\n", expected);
+		printf ("\t\testimated error = % .18f\n", error);
+		//printf ("actual error	  = % .18f\n", result/(PI*fabs(x)) - expected);
+		printf ("\t\tintervals       =  %d\n\n", storeWorkspace->size);
+		// printf ("sig_bm %.8f \tlam_jn %.8f\tsig_jn %.8f\tomega %.8f\tt %.8f\n", sig_bm, lam_jn, sig_jn, omega, v);
+#endif
+
+	}
+
+	// X ~ BM + Poisson * Normal jumps
+	else if (modelType == JUMP_NORM_PDF)
 	{
 		double sig_bm = (t->getParmVector()[0])->getValue();
 		double lam_jn = (t->getParmVector()[1])->getValue();
@@ -362,213 +478,359 @@ double Model::jumpLnLikelihoodForNode(Node* p, const std::vector<Parm*>& parmVec
 		double w = v * (1.0 - tuningBM);
 		double x = p->getSumJumpSize(space);
 
-		// if jumps == 0 (ignores jumpSumSize == 0.0)
+		// REMOVE LATER
+		//return randomPtr->lnNormalPdf(0.0, sig_bm, x);
 
-		/*
-		if (p->getSumJumpSize(space) == 0)
+		// sum over all possible numbers of jumps (truncated to n<100)
+		int n = 0;
+		do
 		{
-			k = -lam_jn * v;// + randomPtr->lnNormalPdf( , , );
-		}
-		*/
-
-/*
-		int delta = 0;
-		if (p->getSumJumpSize(space) == 0)
-		{
-			delta = 1;
-		}
-		//k = delta * exp(-lam_jn * v);
-*/
-
-		// otherwise
-		//else {
-
-			int n = 0;
-
-			do
+			if (lam_jn == 0.0)
 			{
-				if (lam_jn == 0.0)
-				{
 
-					double y = randomPtr->lnNormalPdf(0.0, pow(w * pow((sig_bm), 2), 0.5), x);
+				double y = randomPtr->lnNormalPdf(0.0, pow(w, 0.5) * sig_bm, x);
 #if DEBUG2
-					std::cout << "\t\tn" << p->getIndex() << "\tv:\t" << v << "\tx:\t" << x << "\tlnL:\t" << y <<  "\n";
+				std::cout << "\t\tn" << p->getIndex() << "\tv:\t" << v << "\tx:\t" << x << "\tlnL:\t" << y <<  "\n";
 #endif
-					return y;
-				}
-				else
-					newK = randomPtr->poissonProb(lam_jn * v, n);
-				newK *= randomPtr->normalPdf(0.0, pow(n * pow((sig_jn), 2) + w * pow((sig_bm), 2), 0.5), x);
-				k += newK;
-				n++;
-				//std::cout << n << "\tnewK\t" << newK << "\n";
-			}while(n < 100);
-			//}while(n < pow(10,4) && newK > pow(10,-5));
+				return y;
+			}
+			newK = randomPtr->poissonProb(lam_jn * v, n);
+			newK *= randomPtr->normalPdf(0.0, pow(n * pow(sig_jn,2) + w * pow(sig_bm,2), 0.5), x);
+			k += newK;
+			n++;
+		}while(n < 100);
 
-			k = log(k);
-		//}
+		k = log(k);
 #if DEBUG2
-			std::cout << "\t\tn" << p->getIndex() <<  "\tv:\t" << v << "\tx:\t" << x << "\tlnL:\t" << k <<  "\n";
+			std::cout << "\t\tn:" << p->getIndex() <<  "\tv:\t" << v << "\tw:\t" << w << "\tx:\t" << x << "\tlnL:\t" << k <<  "\n";
+			std::cout << "\t\t\tsig_bm:\t" << sig_bm << "\tlam_jn:\t" << lam_jn << "\tsig_jn:\t" << sig_jn << "\n";
+			//std::cout << "\n";
 #endif
 	}
 
+	else if (modelType == BM_JUMP_PDF)
+	{
+		double sig_bm = (t->getParmVector()[0])->getValue();
+		double v = p->getV();
+		double w = v * (1.0 - tuningBM);
+		double x = p->getSumJumpSize(space);
+
+		k = randomPtr->lnNormalPdf(0.0, pow(w,0.5) * sig_bm, x);
+	}
+	if (modelType == VAR_GAMMA_BESSEL)
+	{
+		k = besselLnLikelihood(p, parmVector, space);
+	}
 
 	return k;
 }
 
-double Model::modelLogLikelihood(void)
+#if 0
+double Model::besselLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, int space)
+{
+	Table* t = tableList.front();
+
+	if (modelType == VAR_GAMMA)
+	{
+		double v = p->getV();
+		double kap_vg = parmVector[1];
+		double sig_vg = parmVector[2];
+
+		// m = 0, theta = 0, nu = 1 / kappa
+		// double gsl_sf_bessel_Knu (double nu, double x)
+		double x = p->getSumJumpSize(space) - v * kap_vg * log(1 - pow(sig_vg, 2) / 2);
+		double k_arg = pow(sig_vg, -2) * pow(x * x * (2 * sig_vg * sig_vg * kap_vg), 0.5);
+		double h_first = 2 * pow(kap_vg, -v * kap_vg) / (pow(2 * PI, 0.5) * exp(randomPtr->lnGamma(v * kap_vg));
+		double h_second = pow(x * x / (2 * sig_vg * sig_vg * kap_vg), 0.5 * v * kap_vg - 0.25);
+		double h_third = gsl_sf_bessel_Knu(v * kap_vg - 0.5, k_arg);
+		return log(h_first * h_second * h_third);
+	}
+}
+#endif
+
+double Model::besselLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, int space)
+{
+
+	double k = 0.0;
+
+	if (modelType == VAR_GAMMA_BESSEL)
+	{
+		double v = p->getV();
+		double sig_bm = parmVector[0]->getValue();
+		double kap_vg = parmVector[1]->getValue();
+		double sig_vg = parmVector[2]->getValue();
+		double xx = fabs(p->getSumJumpSize(space));
+
+		double x = xx;
+		//double x = xx - kap_vg * v * log(1 - 0.5 * sig_vg * sig_vg / kap_vg);
+
+		/*
+		double h_bessel_arg1 = fabs(v * kap_vg - 0.5);
+		double h_bessel_arg2 = pow(2 * kap_vg, 0.5) * x / sig_vg;
+		double h_bessel = gsl_sf_bessel_lnKnu(h_bessel_arg1, h_bessel_arg2);
+
+		double h_top = (0.75 - 0.5 * v * kap_vg) * log(2) + (0.25 + 0.5 * v * kap_vg) * log(kap_vg) + (0.5 - v * kap_vg) * log(sig_vg / x);
+		double h_bottom = 0.5 * log(PI * sig_vg * sig_vg) + gsl_sf_lngamma(v * kap_vg);
+		k = h_top + h_bessel - h_bottom;
+		*/
+
+		double h_bessel_arg1 = fabs(v / kap_vg - 0.5);
+		double h_bessel_arg2 = pow(2 / kap_vg, 0.5) * x / sig_vg;
+		double h_bessel = gsl_sf_bessel_lnKnu(h_bessel_arg1, h_bessel_arg2);
+
+		double h_top = (0.75 - 0.5 * v / kap_vg) * log(2) + (0.25 + 0.5 * v / kap_vg) * -log(kap_vg) + (0.5 - v / kap_vg) * log(sig_vg / x);
+		double h_bottom = 0.5 * log(PI * sig_vg * sig_vg) + gsl_sf_lngamma(v / kap_vg);
+		k = h_top + h_bessel - h_bottom;
+
+#if DEBUG_BESSEL
+		std::cout << "\tBessel\n";
+		std::cout << "\t\tv\t" << v << "\tkap_vg\t" << kap_vg << "\tsig_vg\t" << sig_vg << "\tsig_bm\t" << sig_bm << "\tx\t" << x << "\n";
+		std::cout << "\t\thba1\t" << h_bessel_arg1 << "\thba2\t" << h_bessel_arg2 <<"\n";
+		std::cout << "\t\tk\t" << k <<  " = " << h_top << " + " << h_bessel << " - " << h_bottom << "\n";
+#endif
+	}
+
+	return k;
+}
+
+double Model::modelLnLikelihood(int space)
 {
 	double lnL = 0.0;
 
-	lnL = tableLogLikelihood(tableList.front());
+	lnL = tableLnLikelihood(tableList.front(), space);
 
 	return lnL;
 }
 
-double Model::tableLogLikelihood(Table* t)
+double Model::tableLnLikelihood(Table* t, int space)
 {
 	double lnL = 0.0;
+	const std::vector<Parm*> parmVector = t->getParmVector();
 
-	const std::vector<Parm*> tempParmVector = t->getParmVector();
-	const std::vector<Parm*> tempBranchVector = t->getBranchVector();
-
-	// Collect parameter & branch values from the Table's parameter class
-	std::vector<double> parmVals;
-	std::vector<double> branchVals;
-	for (unsigned int i = 0; i < tempParmVector.size(); i++)
-	{
-		parmVals.push_back(tempParmVector[i]->getValue());
-	}
-	for (unsigned int i = 0; i < tempBranchVector.size(); i++)
-	{
-		branchVals.push_back(tempBranchVector[i]->getValue());
-	}
-
-	// Model's inferred sigma_BM
-	double sigmaBM = parmVals[0];
-	double sigmaBM2 = sigmaBM * sigmaBM;
-
-#if DEBUG3
-	// Calculate likelihoods for single Patron (labeled to a different Parm class)
-	std::cout << std::setprecision(4) << std::endl;
-	std::cout << "L\t\t\t\tR\t\t\t\tP\n";
-	std::cout << "i\tmu\tsigma\tK\tj\tmu\tsigma\tK\tp\tmu\tsigma\tK\n";
-#endif
-
-
-	// update K values at tips according to sampled values
+	// update lnL values at tips according to sampled values
 	if (useJumpKernel)
 	{
 		for (int j = 0; j < numTaxa; j++)
 		{
-			Node* n = topologyPtr->getNode(j);
+			Node* p = topologyPtr->getNode(j);
 
-			double lnJumpLike = jumpLnLikelihoodForNode(n, tempParmVector, 1);
+			double lnJumpLike = jumpLnLikelihood(p, parmVector, space);
 
-			n->setK(lnJumpLike);
-			n->setKj(lnJumpLike);
+			p->setK(lnJumpLike, space);
+			p->setKj(lnJumpLike, space);
 		}
 	}
 
+	// Pruning-wise, calculate the likelihood for each branch in the tree
+	// NOTE: driftLnLikelihood() calls jumpLnLikelihood()
 	for (int j = 0; j < numNodes; j++)
 	{
-		Node* n = topologyPtr->getDownPassNode(j);
+		Node* p = topologyPtr->getDownPassNode(j);
 
-		if (n->getLft() != NULL && n->getRht() != NULL)
+		if (p->getLft() != NULL && p->getRht() != NULL)
 		{
-			// Branch lengths depend on which node's likelihood is being calculated.
-			double tauL = branchVals[n->getLft()->getIndex()];
-			double tauR = branchVals[n->getRht()->getIndex()];
-
-			for (std::list<Patron*>::iterator it_p = patronList.begin(); it_p != patronList.end(); it_p++)
-			{
-#if DEBUG
-				std::cout << "\tPATRON ID:\t" << (*it_p)->getId() << "\n";
-				std::cout << "p->getIndex() = " << n->getIndex() << "\tp->getLft()->getIndex() = " << n->getLft()->getIndex() << "\tp->getRht()->getIndex() = " << n->getRht()->getIndex() << "\n";
-				std::cout << "Parms [l,s,tL,tR] = " << parmVals[0] << "\t" << parmVals[1] << "\t" << tauL << "\t" << tauR << "\n";
-
-#endif
-
-				// get descendants' conditional parameters
-				double muL = n->getLft()->getMu();
-				double sigmaL = n->getLft()->getSigma();
-				double kL = n->getLft()->getK();
-
-				double muR = n->getRht()->getMu();
-				double sigmaR = n->getRht()->getSigma();
-				double kR = n->getRht()->getK();
-
-				// rescale branches according to descendants' variance
-				double tL = tauL + (sigmaL * sigmaL) / sigmaBM2;
-				double tR = tauR + (sigmaR * sigmaR) / sigmaBM2;
-
-				// rescale branches and displace node values if using a jump kernel
-				if (useJumpKernel)
-				{
-					muL -= n->getLft()->getSumJumpSize(1);
-					muR -= n->getRht()->getSumJumpSize(1);
-					tL = tL * tuningBM;
-					tR = tR * tuningBM;
-				}
-
-				// update present node's parameters
-				double muP = (muL * tR + muR * tL) / (tL + tR);
-				double sigmaP = pow(sigmaBM2 * tL * tR / (tL + tR), 0.5);
-				n->setMu(muP);
-				n->setSigma(sigmaP);
-
-				// calculate likelihood of sampled jumps
-				double lnJumpLike = 0.0;
-
-				// ignore the root since it does not sample any jumps
-				if (useJumpKernel && n->getAnc() != NULL)
-				{
-					lnJumpLike = jumpLnLikelihoodForNode(n, tempParmVector, 1);
-				}
-
-				// update normalizing constant
-				double kP = -1.0 * pow(muL - muR, 2) / (2 * sigmaBM2 * (tL + tR));
-				kP -= log(pow(2 * PI * sigmaBM2 * (tL + tR), 0.5));
-
-
-				//n->setK(kP + n->getSumLnProbJumpSize(activeParm) + n->getLnProbJumpCount(activeParm));
-				//n->setK(kP + lnJumpLike);
-
-				n->setKb(kP + n->getRht()->getKb() + n->getLft()->getKb());
-				n->setKj(lnJumpLike + n->getRht()->getKj() + n->getLft()->getKj());
-
-				kP += kL + kR;
-				n->setK(kP + lnJumpLike);
-
-#if DEBUG3
-				std::cout << std::setprecision(4);
-				std::cout << n->getLft()->getIndex() << "\t" << muL << "\t" << sigmaL << "\t" << kL << "\t";
-				std::cout << n->getRht()->getIndex() << "\t" << muR << "\t" << sigmaR << "\t" << kR << "\t";
-				std::cout << n->getIndex() << "\t" << muP << "\t" << sigmaP << "\t" << kP << "\n";
-#endif
-
-			}
+			driftLnLikelihood(p, parmVector, space);
 		}
 	}
 
-	lnL = topologyPtr->getRoot()->getK();
+	lnL = topologyPtr->getRoot()->getK(space);
 	return lnL;
 }
 
 
-double Model::modelLogPriorProbability(void)
+double Model::modelDriftOnlyLnLikelihood(int space)
 {
-	double lnPriorProbability = 0.0;
-	Table* t = tableList.front();
-	std::vector<Parm*>::const_iterator it = t->getParmVector().begin();
-	std::vector<Parm*>::const_iterator itEnd = t->getParmVector().end();
+	double lnL = 0.0;
 
-	for (; it != itEnd; it++)
+	lnL = tableDriftOnlyLnLikelihood(tableList.front(), space);
+
+	return lnL;
+}
+
+double Model::tableDriftOnlyLnLikelihood(Table* t, int space)
+{
+	double lnL = 0.0;
+	const std::vector<Parm*> parmVector = t->getParmVector();
+
+	/*
+	// update lnL values at tips according to sampled values
+	if (useJumpKernel)
 	{
-		lnPriorProbability += (*it)->lnPrior();
+		for (int j = 0; j < numTaxa; j++)
+		{
+			Node* p = topologyPtr->getNode(j);
+
+			//double lnJumpLike = jumpLnLikelihood(p, parmVector, space);
+
+			p->setK(lnJumpLike, space);
+			p->setKj(lnJumpLike, space);
+		}
+	}
+	*/
+
+	// Pruning-wise, calculate the likelihood for each branch in the tree
+	// NOTE: driftLnLikelihood() calls jumpLnLikelihood()
+	for (int j = 0; j < numNodes; j++)
+	{
+		Node* p = topologyPtr->getDownPassNode(j);
+
+		if (p->getLft() != NULL && p->getRht() != NULL)
+		{
+			driftOnlyLnLikelihood(p, parmVector, space);
+		}
 	}
 
-	return lnPriorProbability;
+	lnL = topologyPtr->getRoot()->getKb(space);
+	return lnL;
+}
+
+
+double Model::driftOnlyLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, int space)
+{
+	double tauL = p->getLft()->getV();
+	double tauR = p->getRht()->getV();
+	double sigmaBM = parmVector[0]->getValue();
+	double sigmaBM2 = sigmaBM * sigmaBM;
+	double lnL = 0.0;
+	//for (std::list<Patron*>::iterator it_p = patronList.begin(); it_p != patronList.end(); it_p++)
+	//{
+	#if DEBUG
+					//std::cout << "\tPATRON ID:\t" << (*it_p)->getId() << "\n";
+					std::cout << "p->getIndex() = " << p->getIndex() << "\tp->getLft()->getIndex() = " << p->getLft()->getIndex() << "\tp->getRht()->getIndex() = " << p->getRht()->getIndex() << "\n";
+	#endif
+
+	// get descendants' conditional parameters
+	double muL = p->getLft()->getMu(space);
+	double sigmaL = p->getLft()->getSigma(space);
+	double kL = p->getLft()->getK(space);
+
+	double muR = p->getRht()->getMu(space);
+	double sigmaR = p->getRht()->getSigma(space);
+	double kR = p->getRht()->getK(space);
+
+	// rescale branches according to descendants' variance
+	double tL = tauL + (sigmaL * sigmaL) / sigmaBM2;
+	double tR = tauR + (sigmaR * sigmaR) / sigmaBM2;
+
+	// rescale branches and displace node values if using a jump kernel
+	if (useJumpKernel)
+	{
+		muL -= p->getLft()->getSumJumpSize(space);
+		muR -= p->getRht()->getSumJumpSize(space);
+		tL = tL * tuningBM;
+		tR = tR * tuningBM;
+	}
+
+	// update present node's parameters
+	double muP = (muL * tR + muR * tL) / (tL + tR);
+	double sigmaP = pow(sigmaBM2 * tL * tR / (tL + tR), 0.5);
+	p->setMu(muP, space);
+	p->setSigma(sigmaP, space);
+
+	// calculate likelihood of sampled jumps
+	double lnJumpLike = 0.0;
+
+	/*
+	// ignore the root since it does not sample any jumps
+	if (useJumpKernel && p->getAnc() != NULL)
+	{
+		lnJumpLike = jumpLnLikelihood(p, parmVector, space);
+	}
+	*/
+
+	// update normalizing constant
+	double kP = -1.0 * pow(muL - muR, 2) / (2 * sigmaBM2 * (tL + tR));
+	kP -= log(pow(2 * PI * sigmaBM2 * (tL + tR), 0.5));
+
+	p->setKb(kP + p->getRht()->getKb(space) + p->getLft()->getKb(space), space);
+	//p->setKj(lnJumpLike + p->getRht()->getKj(space) + p->getLft()->getKj(space), space);
+
+	//kP += kL + kR;
+	lnL = kP + p->getRht()->getKb(space) + p->getLft()->getKb(space);// + lnJumpLike;
+	//p->setK(kP, space);
+#if DEBUG3
+		std::cout << std::setprecision(4);
+		std::cout << "\t\t*\tnL:\t" << p->getLft()->getIndex() << "\tmuL:\t" << muL << "\tsigL:\t" << sigmaL << "\tkL:\t" << kL << "\n";
+		std::cout << "\t\t\tnR:\t" << p->getRht()->getIndex() << "\tmuR:\t" << muR << "\tsigR:\t" << sigmaR << "\tkR:\t" << kR << "\n";
+		std::cout << "\t\t\tnP:\t" << p->getIndex() << "\tmuP:\t" << muP << "\tsigP:\t" << sigmaP << "\tkP:\t" << kP << "\n";
+#endif
+
+	//}
+	return lnL;
+}
+
+
+
+double Model::driftLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, int space)
+{
+	double tauL = p->getLft()->getV();
+	double tauR = p->getRht()->getV();
+	double sigmaBM = parmVector[0]->getValue();
+	double sigmaBM2 = sigmaBM * sigmaBM;
+	double lnL = 0.0;
+	//for (std::list<Patron*>::iterator it_p = patronList.begin(); it_p != patronList.end(); it_p++)
+	//{
+	#if DEBUG
+					//std::cout << "\tPATRON ID:\t" << (*it_p)->getId() << "\n";
+					std::cout << "p->getIndex() = " << p->getIndex() << "\tp->getLft()->getIndex() = " << p->getLft()->getIndex() << "\tp->getRht()->getIndex() = " << p->getRht()->getIndex() << "\n";
+	#endif
+
+	// get descendants' conditional parameters
+	double muL = p->getLft()->getMu(space);
+	double sigmaL = p->getLft()->getSigma(space);
+	double kL = p->getLft()->getK(space);
+
+	double muR = p->getRht()->getMu(space);
+	double sigmaR = p->getRht()->getSigma(space);
+	double kR = p->getRht()->getK(space);
+
+	// rescale branches according to descendants' variance
+	double tL = tauL + (sigmaL * sigmaL) / sigmaBM2;
+	double tR = tauR + (sigmaR * sigmaR) / sigmaBM2;
+
+	// rescale branches and displace node values if using a jump kernel
+	if (useJumpKernel)
+	{
+		muL -= p->getLft()->getSumJumpSize(space);
+		muR -= p->getRht()->getSumJumpSize(space);
+		tL = tL * tuningBM;
+		tR = tR * tuningBM;
+	}
+
+	// update present node's parameters
+	double muP = (muL * tR + muR * tL) / (tL + tR);
+	double sigmaP = pow(sigmaBM2 * tL * tR / (tL + tR), 0.5);
+	p->setMu(muP, space);
+	p->setSigma(sigmaP, space);
+
+	// calculate likelihood of sampled jumps
+	double lnJumpLike = 0.0;
+
+	// ignore the root since it does not sample any jumps
+	if (useJumpKernel && p->getAnc() != NULL)
+	{
+		lnJumpLike = jumpLnLikelihood(p, parmVector, space);
+	}
+
+	// update normalizing constant
+	double kP = -1.0 * pow(muL - muR, 2) / (2 * sigmaBM2 * (tL + tR));
+	kP -= log(pow(2 * PI * sigmaBM2 * (tL + tR), 0.5));
+
+	p->setKb(kP + p->getRht()->getKb(space) + p->getLft()->getKb(space), space);
+	p->setKj(lnJumpLike + p->getRht()->getKj(space) + p->getLft()->getKj(space), space);
+
+	kP += kL + kR;
+	lnL = kP + lnJumpLike;
+	p->setK(kP + lnJumpLike, space);
+#if DEBUG3
+		std::cout << std::setprecision(4);
+		std::cout << "\t\t*\tnL:\t" << p->getLft()->getIndex() << "\tmuL:\t" << muL << "\tsigL:\t" << sigmaL << "\tkL:\t" << kL << "\n";
+		std::cout << "\t\t\tnR:\t" << p->getRht()->getIndex() << "\tmuR:\t" << muR << "\tsigR:\t" << sigmaR << "\tkR:\t" << kR << "\n";
+		std::cout << "\t\t\tnP:\t" << p->getIndex() << "\tmuP:\t" << muP << "\tsigP:\t" << sigmaP << "\tkP:\t" << kP << "\n";
+#endif
+
+//	}
+	return lnL;
 }
 
 Parm* Model::pickParmAtRandom(Table* t)
@@ -600,7 +862,7 @@ Node* Model::pickNodeByBrLen(void)
 	double u = randomPtr->uniformRv();
 	double sum = 0.0;
 	int n = 0;
-	Node* p;
+	Node* p = NULL;
 
 	while (sum < u && n < numNodes)
 	{
@@ -691,6 +953,140 @@ void Model::printTables(void)
 Conc* Model::getActiveConc()
 {
 	return alpha->getActiveConc();
+}
+#endif
+
+
+
+#if 0
+double Model::tableLogLikelihood(Table* t)
+{
+	double lnL = 0.0;
+
+	const std::vector<Parm*> tempParmVector = t->getParmVector();
+	const std::vector<Parm*> tempBranchVector = t->getBranchVector();
+
+	// Collect parameter & branch values from the Table's parameter class
+	std::vector<double> parmVals;
+	std::vector<double> branchVals;
+	for (unsigned int i = 0; i < tempParmVector.size(); i++)
+	{
+		parmVals.push_back(tempParmVector[i]->getValue());
+	}
+	for (unsigned int i = 0; i < tempBranchVector.size(); i++)
+	{
+		branchVals.push_back(tempBranchVector[i]->getValue());
+	}
+
+	// Model's inferred sigma_BM
+	double sigmaBM = parmVals[0];
+	double sigmaBM2 = sigmaBM * sigmaBM;
+
+#if DEBUG3
+	// Calculate likelihoods for single Patron (labeled to a different Parm class)
+	std::cout << std::setprecision(4) << std::endl;
+	std::cout << "L\t\t\t\tR\t\t\t\tP\n";
+	std::cout << "i\tmu\tsigma\tK\tj\tmu\tsigma\tK\tp\tmu\tsigma\tK\n";
+#endif
+
+
+	// update K values at tips according to sampled values
+	if (useJumpKernel)
+	{
+		for (int j = 0; j < numTaxa; j++)
+		{
+			Node* n = topologyPtr->getNode(j);
+
+			double lnJumpLike = jumpLnLikelihood(n, tempParmVector, 1);
+
+			n->setK(lnJumpLike);
+			n->setKj(lnJumpLike);
+		}
+	}
+
+	for (int j = 0; j < numNodes; j++)
+	{
+		Node* n = topologyPtr->getDownPassNode(j);
+
+		if (n->getLft() != NULL && n->getRht() != NULL)
+		{
+			// Branch lengths depend on which node's likelihood is being calculated.
+			double tauL = branchVals[n->getLft()->getIndex()];
+			double tauR = branchVals[n->getRht()->getIndex()];
+
+			for (std::list<Patron*>::iterator it_p = patronList.begin(); it_p != patronList.end(); it_p++)
+			{
+#if DEBUG
+				std::cout << "\tPATRON ID:\t" << (*it_p)->getId() << "\n";
+				std::cout << "p->getIndex() = " << n->getIndex() << "\tp->getLft()->getIndex() = " << n->getLft()->getIndex() << "\tp->getRht()->getIndex() = " << n->getRht()->getIndex() << "\n";
+				std::cout << "Parms [l,s,tL,tR] = " << parmVals[0] << "\t" << parmVals[1] << "\t" << tauL << "\t" << tauR << "\n";
+
+#endif
+
+				// get descendants' conditional parameters
+				double muL = n->getLft()->getMu();
+				double sigmaL = n->getLft()->getSigma();
+				double kL = n->getLft()->getK();
+
+				double muR = n->getRht()->getMu();
+				double sigmaR = n->getRht()->getSigma();
+				double kR = n->getRht()->getK();
+
+				// rescale branches according to descendants' variance
+				double tL = tauL + (sigmaL * sigmaL) / sigmaBM2;
+				double tR = tauR + (sigmaR * sigmaR) / sigmaBM2;
+
+				// rescale branches and displace node values if using a jump kernel
+				if (useJumpKernel)
+				{
+					muL -= n->getLft()->getSumJumpSize(1);
+					muR -= n->getRht()->getSumJumpSize(1);
+					tL = tL * tuningBM;
+					tR = tR * tuningBM;
+				}
+
+				// update present node's parameters
+				double muP = (muL * tR + muR * tL) / (tL + tR);
+				double sigmaP = pow(sigmaBM2 * tL * tR / (tL + tR), 0.5);
+				n->setMu(muP);
+				n->setSigma(sigmaP);
+
+				// calculate likelihood of sampled jumps
+				double lnJumpLike = 0.0;
+
+				// ignore the root since it does not sample any jumps
+				if (useJumpKernel && n->getAnc() != NULL)
+				{
+					lnJumpLike = jumpLnLikelihood(n, tempParmVector, 1);
+				}
+
+				// update normalizing constant
+				double kP = -1.0 * pow(muL - muR, 2) / (2 * sigmaBM2 * (tL + tR));
+				kP -= log(pow(2 * PI * sigmaBM2 * (tL + tR), 0.5));
+
+
+				//n->setK(kP + n->getSumLnProbJumpSize(activeParm) + n->getLnProbJumpCount(activeParm));
+				//n->setK(kP + lnJumpLike);
+
+				n->setKb(kP + n->getRht()->getKb() + n->getLft()->getKb());
+				n->setKj(lnJumpLike + n->getRht()->getKj() + n->getLft()->getKj());
+
+				kP += kL + kR;
+				n->setK(kP + lnJumpLike);
+
+#if DEBUG3
+				std::cout << std::setprecision(4);
+				std::cout << n->getLft()->getIndex() << "\t" << muL << "\t" << sigmaL << "\t" << kL << "\t";
+				std::cout << n->getRht()->getIndex() << "\t" << muR << "\t" << sigmaR << "\t" << kR << "\t";
+				std::cout << n->getIndex() << "\t" << muP << "\t" << sigmaP << "\t" << kP << "\n";
+#endif
+
+			}
+		}
+	}
+
+	lnL = topologyPtr->getRoot()->getK();
+	return lnL;
 }
 #endif
 
@@ -2738,4 +3134,85 @@ double Model::trapInt(double* fn)
 	return val * ReStepSize;
 }
 #endif
+
+/*
+
+	if (modelType == 0) // undef
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		if (fixBranches)
+			initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
+		else if (!fixBranches)
+			initialParms.push_back(new Sigma(randomPtr, "Lam-JN", 1.0));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
+
+	}
+	else if (modelType == 1) // Alpha-stable + BM
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Alpha(randomPtr, "Alf-AS"));
+		initialParms.push_back(new Sigma(randomPtr, "Cee-AS"));
+
+	}
+	else if (modelType == 2) // NumInt Poisson-Normal + BM
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
+
+	}
+	else if (modelType == 3) // Sampled Poisson-Normal + BM
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
+
+	}
+	else if (modelType == 4) // Bessel Variance Gamma
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Kap-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));
+	}
+	else if (modelType == 5) // Brownian motion only
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+	}
+	else if (modelType == 6) // NumInt Variance Gamma
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Kap-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));
+	}
+	else if (modelType == 7) // Brownian motion (w/ fake jump)
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+	}
+	else
+	{
+		std::cerr << "Unrecognized modelType value: " << modelType << "\n";
+		exit(1);
+	}
+	*/
+
+	/*
+	// create initial branches
+	std::vector<Parm*> initialBranches;
+
+	for (int i = 0; i < numBranches; i++)
+	{
+		std::stringstream ss;
+		ss << i;
+		if (fixBranches)
+		{
+			double brlen = topologyPtr->getDownPassNode(i)->getV();
+			initialBranches.push_back(new Tau(randomPtr, "Tau-" + ss.str(), brlen));
+		}
+		else if (!fixBranches)
+		{
+			initialBranches.push_back(new Tau(randomPtr, "Tau-" + ss.str()));
+		}
+	}
+
+*/
 

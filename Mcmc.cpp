@@ -5,7 +5,13 @@
  *
  */
 
+
+#define WORKING_JUMP 1
 #define DEBUG2 0
+#define DEBUG_PROPOSE_JUMP 0
+#define DEBUG_PROPOSE_PARM 0
+#define JUMP_LIKE_BY_BRANCH 0
+
 #include "Mcmc.h"
 
 Mcmc::Mcmc(Expression *ep, Model *mp, Settings *sp, MbRandom *rp, Topology *tp)
@@ -22,12 +28,10 @@ Mcmc::Mcmc(Expression *ep, Model *mp, Settings *sp, MbRandom *rp, Topology *tp)
 	printFreqMH = settingsPtr->getPrintFreqMH();
 	printFreqCRP = settingsPtr->getPrintFreqCRP();
 	printFreqJump = settingsPtr->getPrintFreqJump();
-	printStdOut = settingsPtr->getPrintStdOut();
+	printFreqStdOut = settingsPtr->getPrintFreqStdOut();
 
-	// MCMC settings
+	// MCMC settings (override)
 	//numCycles = 1000000;
-	//numCycles = 10000;
-	//numCycles = 10;//00000;//00000;
 	//printFreqMH = 1000;//0000;
 	//printFreqJump = 100000;//numCycles+1;
 	//printFreqCRP = 50;
@@ -47,12 +51,6 @@ Mcmc::Mcmc(Expression *ep, Model *mp, Settings *sp, MbRandom *rp, Topology *tp)
 	else
 		betaSteppingStone = 1.0;
 
-	/*
-	alphaCRP = settingsPtr->getAlphaCRP();
-	auxCRP = settingsPtr->getAuxCRP();
-	useCRP = settingsPtr->getUseCRP();
-	*/
-	// tuning = settingsPtr->getTuning();
 
 	oldLnL = 0.0;
 	newLnL = 0.0;
@@ -82,12 +80,12 @@ Mcmc::Mcmc(Expression *ep, Model *mp, Settings *sp, MbRandom *rp, Topology *tp)
 
 	// propose change to sampled jumps
 	if (useJumpKernel)
-		proposalProbs.push_back( 1.0 );
+		proposalProbs.push_back( 5.0 );
 	else if (!useJumpKernel)
 		proposalProbs.push_back( 0.0 );
 
 	// move along variance ridge
-	proposalProbs.push_back(1.0);
+	proposalProbs.push_back(0.0);
 
 	for (int i = 0; i < (int)proposalProbs.size(); i++) sum += proposalProbs[i];
 	for (int i = 0; i < (int)proposalProbs.size(); i++) proposalProbs[i] = proposalProbs[i] / sum;
@@ -111,19 +109,37 @@ Mcmc::~Mcmc()
 
 void Mcmc::runChain()
 {
-	std::cout << "MCMC: Run chain";
-	if (useSteppingStone)
-		std::cout << " (beta=" << betaSteppingStone << ")";
-	std::cout << "\n";
+	std::cout << "INITIALIZING: MCMC\n";
+
 
 	// initialize jump samples
-	topologyPtr->copyNodeSpaces(1, 0);
+	for (int n = 0; n < numNodes; n++)
+	{
+		Node* p = topologyPtr->getNode(n);
+		modelPtr->proposeJumpSize(p, tableListPtr->front()->getParmVector(), 1);
+	}
+/*
+	std::cout << "Topology space 0\n";
+	topologyPtr->printJumpSizes(0);
+	std::cout << "Topology space 1\n";
+	topologyPtr->printJumpSizes(1);
+*/
 
-	oldLnL = modelPtr->modelLogLikelihood();
+	oldLnL = modelPtr->modelLnLikelihood(1);
+	oldKj = topologyPtr->getRoot()->getKj(1);
+	oldKb = topologyPtr->getRoot()->getKb(1);
+
+	//std::cout << "INITIALIZING: Kj " << oldKj  << "\n";
+
+	topologyPtr->copyNodeSpaces(0, 1);
 
 	int postBurnN = 0;
 	int burnIn = 1000;
 
+	std::cout << "MCMC: Run chain";
+	if (useSteppingStone)
+		std::cout << " (beta=" << betaSteppingStone << ")";
+	std::cout << "\n";
 
 	// get initial likelihood
 	for (int n = 0; n <= numCycles; n++)
@@ -133,30 +149,24 @@ void Mcmc::runChain()
 		proposeState();
 
 		// print information to the screen
-		if ( n % printFreqMH == 0 )
+		if (n % printFreqMH == 0)
 		{
-			if (printStdOut)
-			{
-				std::cout << std::setw(5) << n << " -- ";
-				std::cout << std::fixed << std::setprecision(8) << printOldLnL << "\t->\t" << newLnL << "\t" << proposeStr << "\n";
+			printChainState(n, oldLnL);
+		}
+
+		if (n % printFreqStdOut == 0)
+		{
+			std::cout << std::setw(5) << n << " -- ";
+			std::cout << std::fixed << std::setprecision(8) << printOldLnL << "\t->\t" << newLnL << "\t" << proposeStr << "\n";
 #if DEBUG2
-				std::cout << "\n";
+			std::cout << "\n";
 #endif
-			}
-			if (useSteppingStone)
-			{
-				printChainState(n, oldLnL);
-			}
-			else if (!useSteppingStone)
-			{
-				printChainState(n, oldLnL);
-			}
 		}
 
 
 		if (n % printFreqJump == 0)
 		{
-			topologyPtr->printJumpSizes(0);
+			printChainJumps(n);
 		}
 
 		if (n > burnIn)
@@ -234,10 +244,15 @@ void Mcmc::proposeParm(Parm* parm)
 	double lnPriorRatio = parm->lnPriorRatio();
 
 	// calculate the likelihood ratio
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood(1);
+	newKb = topologyPtr->getRoot()->getKb(1);
+	newKj = topologyPtr->getRoot()->getKj(1);
 	double lnLikelihoodRatio = newLnL - oldLnL;
-	//lnLikelihoodRatio *= betaSteppingStone;
-			lnLikelihoodRatio = betaSteppingStone*topologyPtr->getRoot()->getKb() + topologyPtr->getRoot()->getKj();
+	if (useSteppingStone)
+	{
+		//lnLikelihoodRatio *= betaSteppingStone;
+		lnLikelihoodRatio = betaSteppingStone * (newKb - oldKb) + (newKj - oldKj);
+	}
 
 	// accept or reject MH ratio
 	bool acceptState = false;
@@ -248,7 +263,7 @@ void Mcmc::proposeParm(Parm* parm)
 		acceptState = true;
 	}
 
-	#if DEBUG2
+	#if DEBUG_PROPOSE_PARM
 	std::cout << "\t" << parm->getName() << "\t" << oldVal << " -> " << newVal << "\n";
 	std::cout << "\tlnProposalRatio:\t" << lnProposalRatio << "\n";
 	std::cout << "\tlnPriorRatio:\t\t" << lnPriorRatio << "\n";
@@ -267,13 +282,15 @@ void Mcmc::proposeParm(Parm* parm)
 		//topologyPtr->flipAllActiveParms();
 		parm->incrementNumAccepted();
 		modelPtr->keep(parm);
+		topologyPtr->copyNodeSpaces(0, 1);
 		oldLnL = newLnL;
-		oldKb = topologyPtr->getRoot()->getKb();
-		oldKj = topologyPtr->getRoot()->getKj();
+		oldKb = newKb;
+		oldKj = newKj;
 	}
 	else
 	{
 		modelPtr->restore(parm);
+		topologyPtr->copyNodeSpaces(1, 0);
 	}
 
 	proposeStr = parm->getName() + ",\t\tUpdate : " + printBool(acceptState);
@@ -284,68 +301,157 @@ void Mcmc::proposeChangeJump(void)
 {
 	// choose branch
 	Table* t = tableListPtr->front();
-	Node* p = topologyPtr->getRandomNodeByLength();
+	int numJumpAccept = 0;
+	int numJumpReject = 0;
 
-	// calculate the proposal ratio
-	//double lnProposalRatio = modelPtr->proposeRemoveJump(p, t->getParmVector(), 1);
-	double lnProposalRatio = modelPtr->proposeJumpSize(p, t->getParmVector(), 1);
-
-	// calculate the prior ratio
-	int delta = 0;
-	if (p->getSumJumpSize(0) == 0)
+	// propose new jump displacement for all internal nodes
+	for (int i = 0; i < numNodes; i++)
 	{
-		delta = 1;
+		Node* p = topologyPtr->getDownPassNode(i);
+
+		if (p->getAnc() != NULL)
+		{
+			// calculate the proposal ratio
+			double lnProposalRatio = modelPtr->proposeJumpSize(p, t->getParmVector(), 1);
+
+			// calculate the prior ratio
+			double lnPriorRatio = 0.0;
+
+			// calculate the likelihood ratio
+
+#if JUMP_LIKE_BY_BRANCH
+			// BY BRANCH
+			// save old lnL for node's ancestor
+			double oldNodeLnL = p->getAnc()->getK(0);
+			double oldNodeKb = p->getAnc()->getKb(0);
+			double oldNodeKj = p->getAnc()->getKj(0);
+
+			// set proposed jump for node
+			double lnJumpLike = modelPtr->jumpLnLikelihood(p, t->getParmVector(), 1);
+
+			if (p->getLft() == NULL & p->getRht() == NULL)
+			{
+				p->setK(lnJumpLike, 1);
+				p->setKj(lnJumpLike, 1);
+			}
+			else
+			{
+				p->setKb(p->getLft()->getKb(1) + p->getRht()->getKb(1), 1); //Check if this is right, update yet?
+				p->setKj(lnJumpLike + p->getLft()->getKj(1) + p->getRht()->getKj(1), 1);
+				p->setK(lnJumpLike + p->getLft()->getK(1) + p->getRht()->getK(1), 1);
+			}
+
+			// save new lnL for node's ancestor
+			double newNodeLnL = modelPtr->driftLnLikelihood(p->getAnc(), t->getParmVector(), 1); //check to make sure p->getAnc() is right
+			double newNodeKb = p->getAnc()->getKb(1);
+			double newNodeKj = p->getAnc()->getKj(1);
+
+			newLnL = oldLnL - oldNodeLnL + newNodeLnL;
+			newKb = oldKb - oldNodeKb + newNodeKb;
+			newKj = oldKj - oldNodeKj + newNodeKj;
+
+//#if DEBUG
+			std::cout << "\tn" << p->getIndex() << "\n";
+			std::cout << "\t\toldNode\t" << oldNodeLnL << "\t" << oldNodeKb << "\t" << oldNodeKj << "\n";
+			std::cout << "\t\told\t" << oldLnL << "\t" << oldKb << "\t" << oldKj << "\n";
+			std::cout << "\t\tnewNode\t" << newNodeLnL << "\t" << newNodeKb << "\t" << newNodeKj << "\n";
+			std::cout << "\t\tnew\t" << newLnL << "\t" << newKb << "\t" << newKj << "\n";
+//#endif
+
+			double lnLikelihoodRatio = newLnL - oldLnL;
+			if (useSteppingStone)
+			{
+				//lnLikelihoodRatio *= betaSteppingStone;
+				lnLikelihoodRatio = betaSteppingStone * (newKb - oldKb) + (newKj - oldKj);
+
+			}
+
+
+#else
+			// BY TREE
+
+			// jump for p
+			// drift for model
+
+
+#if WORKING_JUMP
+			//double newK = topologyPtr->getRoot()->getK();
+
+			newKj = modelPtr->jumpLnLikelihood(p, t->getParmVector(), 1);
+			oldKj = modelPtr->jumpLnLikelihood(p, t->getParmVector(), 0);
+			newKb = modelPtr->modelDriftOnlyLnLikelihood(1);
+			//oldKb = modelPtr->modelDriftOnlyLnLikelihood(0);
+
+			//modelPtr->modelLnLikelihood(0);
+			//double newKb = topologyPtr->getRoot()->getKb();
+			double diffKj0 = topologyPtr->getRoot()->getKj(1) - topologyPtr->getRoot()->getKj(0);
+			double diffKb0 = topologyPtr->getRoot()->getKb(1) - topologyPtr->getRoot()->getKb(0);
+			double diffKj1 = newKj - oldKj;
+			double diffKb1 = newKb - oldKb;
+			//	std::cout << "\t\tdiffK:\t" << diffKj0 << "\t" << diffKj1 << "\t" << diffKb0 << "\t" << diffKb1 << "\n";
+#else
+			newLnL = modelPtr->modelLnLikelihood(1);
+			newKj = topologyPtr->getRoot()->getKj(1);
+			newKb = topologyPtr->getRoot()->getKb(1);
+
+#endif
+
+
+
+
+//			newLnL += newKb - oldKb;
+
+
+			double lnLikelihoodRatio = newKb - oldKb + newKj - oldKj;
+			if (useSteppingStone)
+			{
+				lnLikelihoodRatio = betaSteppingStone*(newKb - oldKb) + (newKj - oldKj);
+			}
+#endif
+
+			// accept or reject MH ratio
+			bool acceptState = false;
+			double r = safeExp( lnLikelihoodRatio + lnPriorRatio + lnProposalRatio );
+			double u = randomPtr->uniformRv();
+			if (u < r)
+			{
+				acceptState = true;
+			}
+
+		#if DEBUG_JUMP
+			std::cout << "\tlnProposalRatio:\t" << lnProposalRatio << "\n";
+			std::cout << "\tlnPriorRatio:\t\t" << lnPriorRatio << "\n";
+			std::cout << "\toldLnL:\t\t\t" << oldLnL << "\n";
+			std::cout << "\tnewLnL:\t\t\t" << newLnL << "\n";
+			std::cout << "\tlnLikeRatio:\t\t" << lnLikelihoodRatio << "\n";
+			std::cout << "\tMH Ratio:\t\t" << r << " (" << lnLikelihoodRatio + lnPriorRatio + lnProposalRatio << ")\n";
+			std::cout << "\tu:\t\t\t" << u << "\t\t\t" << "r:\t" << r << "\n";
+			#endif
+
+			// update the state of the chain
+			if (acceptState == true)
+			{
+				p->copySpace(0, 1);
+				oldKb = newKb;
+				oldKj = newKj;
+				numJumpAccept++;
+
+			}
+			else
+			{
+				p->copySpace(1, 0);
+				numJumpReject++;
+			}
+		}
 	}
-	int deltaNew = 0;
-	if (p->getSumJumpSize(1) == 0)
-	{
-		deltaNew = 1;
-	}
 
-	double lnPriorRatio = 0.0;	//( deltaNew + randomPtr->normalPdf(0.0, 10, p->getSumJumpSize(1) ) ) /
-			              	  	//( delta    + randomPtr->normalPdf(0.0, 10, p->getSumJumpSize(0) ) );
+	modelPtr->modelLnLikelihood(0);
+	oldKj = topologyPtr->getRoot()->getKj(0);
+	oldKb = topologyPtr->getRoot()->getKb(0);
+	oldLnL = oldKj + oldKb;
+	newLnL = oldKj + oldKb;
 
-	// calculate the likelihood ratio
-	newLnL = modelPtr->modelLogLikelihood();
-	double lnLikelihoodRatio = newLnL - oldLnL;
-	if (useSteppingStone)
-		//lnLikelihoodRatio *= betaSteppingStone;
-		lnLikelihoodRatio = betaSteppingStone*topologyPtr->getRoot()->getKb() + topologyPtr->getRoot()->getKj();
-
-	// accept or reject MH ratio
-	bool acceptState = false;
-	double r = safeExp( lnLikelihoodRatio + lnPriorRatio + lnProposalRatio );
-	double u = randomPtr->uniformRv();
-	if (u < r)
-	{
-		acceptState = true;
-	}
-
-#if DEBUG2
-	std::cout << "\tlnProposalRatio:\t" << lnProposalRatio << "\n";
-	std::cout << "\tlnPriorRatio:\t\t" << lnPriorRatio << "\n";
-	std::cout << "\toldLnL:\t\t\t" << oldLnL << "\n";
-	std::cout << "\tnewLnL:\t\t\t" << newLnL << "\n";
-	std::cout << "\tlnLikeRatio:\t\t" << lnLikelihoodRatio << "\n";
-	std::cout << "\tMH Ratio:\t\t" << r << " (" << lnLikelihoodRatio + lnPriorRatio + lnProposalRatio << ")\n";
-	std::cout << "\tu:\t\t\t" << u << "\t\t\t" << "r:\t" << r << "\n";
-	#endif
-
-	// update the state of the chain
-	if (acceptState == true)
-	{
-		p->copySpace(0, 1);
-		//topologyPtr->decrementNumJumps();
-		oldLnL = newLnL;
-		oldKb = topologyPtr->getRoot()->getKb();
-		oldKj = topologyPtr->getRoot()->getKj();
-	}
-	else
-	{
-		p->copySpace(1, 0);
-	}
-
-	proposeStr = "n" + printInt(p->getIndex()) + "\t\tChngJmp: " + printBool(acceptState);
+	proposeStr = "\t\tChngJmp: " + Util::intToString(numJumpAccept) + "/" + Util::intToString(numNodes);
 }
 
 void Mcmc::proposeRidgeMove(void)
@@ -381,11 +487,15 @@ void Mcmc::proposeRidgeMove(void)
 
 	// calculate the likelihood ratio
 	// modelPtr->updateModel();
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood(1);
+	newKb = topologyPtr->getRoot()->getKb(1);
+	newKj = topologyPtr->getRoot()->getKj(1);
 	double lnLikelihoodRatio = newLnL - oldLnL;
 	if (useSteppingStone)
+	{
 		//lnLikelihoodRatio *= betaSteppingStone;
-		lnLikelihoodRatio = betaSteppingStone*topologyPtr->getRoot()->getKb() + topologyPtr->getRoot()->getKj();
+		lnLikelihoodRatio = betaSteppingStone*(newKb - oldKb) + (newKj - oldKj);
+	}
 
 	// accept or reject MH ratio
 	bool acceptState = false;
@@ -416,23 +526,29 @@ void Mcmc::proposeRidgeMove(void)
 		ljnP->incrementNumAccepted();
 		modelPtr->keep(sbmP);
 		modelPtr->keep(ljnP);
+		topologyPtr->copyNodeSpaces(0, 1);
 		oldLnL = newLnL;
-		oldKb = topologyPtr->getRoot()->getKb();
-		oldKj = topologyPtr->getRoot()->getKj();
+		oldKb = newKb;
+		oldKj = newKj;
 	}
 	else
 	{
 		modelPtr->restore(sbmP);
 		modelPtr->restore(ljnP);
+		topologyPtr->copyNodeSpaces(1, 0);
 	}
 
 	proposeStr = "\t\tRdgMove: " + printBool(acceptState);
 }
 
+
+
+
 void Mcmc::openFiles(std::string fn) {
 
 	std::string tf = fn + ".t";
 	std::string pf = fn + ".p";
+	std::string jf = fn + ".j";
 	std::string patronFile = fn + ".patron";
 	std::string tableFile = fn + ".table";
 
@@ -452,6 +568,12 @@ void Mcmc::openFiles(std::string fn) {
 		exit(1);
 	}
 
+	jumpFileStrm.open( jf.c_str(), std::ios::out );
+	if ( !jumpFileStrm )
+	{
+		std::cerr << "ERROR: Problem opening jump output file" << std::endl;
+		exit(1);
+	}
 	/*
 	if (useCRP)
 	{
@@ -478,7 +600,6 @@ void Mcmc::printChainState(int n, double lnL) {
 	if (n == 0)
 	{
 		std::string pHeaderStr = "";
-		std::string tHeaderStr = "";
 
 		for (std::list<Table*>::iterator it_t = tableListPtr->begin(); it_t != tableListPtr->end(); it_t++)
 		{
@@ -494,30 +615,14 @@ void Mcmc::printChainState(int n, double lnL) {
 				}
 			}
 		}
-		pHeaderStr += "\tkb\tkj";
 
-		parmFileStrm << "Cycle\tlnL\t" << pHeaderStr << std::endl;
-
-		/*
-		for (int i = 0; i < modelPtr->getNumParameters(); i++)
-		{
-			Parm* p = modelPtr->getParameter(i);
-
-			Tree* derivedPtr = dynamic_cast<Tree*> (p);
-			if (derivedPtr != 0)
-				tHeaderStr += p->getParameterHeader();
-			else
-
-			pHeaderStr += p->getParameterHeader();
-		}
-
-		//treeFileStrm << tHeaderStr;
-		parmFileStrm << "Cycle\tlnL\t" << pHeaderStr << std::endl;
-		*/
+		parmFileStrm << "Cycle\tlnL\tkb\tkj\t" << pHeaderStr << std::endl;
 	}
 
 	std::string pStr = "";
-	std::string tStr = "";
+	pStr += "\t" + printDouble(oldKb);
+	pStr += "\t" + printDouble(oldKj);
+	pStr += "\t";
 
 	for (std::list<Table*>::iterator it_t = tableListPtr->begin(); it_t != tableListPtr->end(); it_t++)
 	{
@@ -533,84 +638,44 @@ void Mcmc::printChainState(int n, double lnL) {
 			}
 		}
 	}
-	pStr += "\t" + printDouble(oldKb);
-	pStr += "\t" + printDouble(oldKj);
 
 	parmFileStrm << n << '\t' << std::fixed << std::setprecision(2) << lnL << '\t' << pStr << std::endl;
-
-
-	/*
-	for (int i = 0; i < modelPtr->getNumParameters(); i++)
-	{
-		Parm* p = modelPtr->getParameter(i);
-		Tree* derivedPtr = dynamic_cast<Tree*> (p);
-		if (derivedPtr != 0)
-			tStr += p->getParameterStr();
-		else
-			pStr += p->getParameterStr();
-	}
-	//treeFileStrm << "   tree_" << n << " = " << tStr << ";" << std::endl;
-	parmFileStrm << n << '\t' << std::fixed << std::setprecision(2) << lnL << '\t' << pStr << std::endl;
-	*/
-
-
-	if (n == numCycles)
-	{
-		std::cout << "Mcmc::runChain() complete!\n";
-		//treeFileStrm << "end;" << std::endl;
-	}
 
 }
 
-/*
-void Mcmc::printTableState(int n)
+void Mcmc::printChainJumps(int n)
 {
-	// HEADER
-	// i.e.
-	//	CYCLE
-	//		TABLE
-	//			GENE	PARAMS
-
+	Node* p;
 	if (n == 0)
 	{
-		std::string pHeaderStr = "";
-		pHeaderStr += "cycle\ttable\tname\t";
-		Table* firstTable = modelPtr->getTableListPtr()->front();
-		for (std::vector<Parm*>::const_iterator it_p = firstTable->getParmVector().begin(); it_p != firstTable->getParmVector().end(); it_p++)
+		std::string jHeaderStr = "";
+
+		for (int i = 0; i < numNodes; i++)
 		{
-			pHeaderStr += (*it_p)->getParameterHeader();
+			p = topologyPtr->getDownPassNode(i);
+			if (p->getAnc() != NULL)
+			{
+				jHeaderStr += "\t" + printInt(p->getIndex());
+			}
 		}
-	//	pHeaderStr += modelPtr->getAlpha()->getParameterHeader();
-	//	pHeaderStr += "\n";
-		tableFileStrm << pHeaderStr;
+
+		jumpFileStrm << "Cycle" << jHeaderStr << std::endl;
 	}
 
-
-	// BODY
-
-	tableFileStrm << n << "\n";
-	for (std::list<Table*>::iterator it_t = tableListPtr->begin(); it_t != tableListPtr->end(); it_t++)
+	std::string jStr = "";
+	for (int i = 0; i < numNodes; i++)
 	{
-		std::string pStr = "";
-		tableFileStrm << "\t" << printInt((*it_t)->getId()) << "\n";
-		for (std::vector<Parm*>::const_iterator it_p = (*it_t)->getParmVector().begin(); it_p != (*it_t)->getParmVector().end(); it_p++)
+		p = topologyPtr->getDownPassNode(i);
+		if (p->getAnc() != NULL)
 		{
-			pStr += (*it_p)->getParameterStr();
-		}
-		//pStr += modelPtr->getAlpha()->getParameterStr() + "\n";
-
-		for (std::list<Patron*>::const_iterator it_i = (*it_t)->getPatronList().begin(); it_i != (*it_t)->getPatronList().end(); it_i++)
-		{
-			tableFileStrm << "\t\t" << (*it_i)->getName() << "\t" << pStr;
+			jStr += "\t" + printDouble(p->getSumJumpSize(0));
 		}
 	}
-	tableFileStrm << "\n";
 
-	// parmFileStrm << n << '\t' << std::fixed << std::setprecision(2) << lnL << '\t' << pStr << std::endl;
-
+	jumpFileStrm << n << jStr << std::endl;
 }
 
-*/
+
 
 std::string Mcmc::printBool(bool tf)
 {
@@ -725,7 +790,7 @@ Table* Mcmc::reseatPatron(void)
 		modelPtr->updateModel();
 
 		// calculate the likelihoods
-		proposalLnLs.push_back(modelPtr->modelLogLikelihood());
+		proposalLnLs.push_back(modelPtr->modelLnLikelihood());
 		// std::cout << "\t" << proposalLnLs.back() << "\n";
 
 		// calculate the likelihood-weighted probabilities
@@ -759,7 +824,7 @@ Table* Mcmc::reseatPatron(void)
 		modelPtr->updateModel();
 
 		// calculate the likelihoods
-		proposalLnLs.push_back(modelPtr->modelLogLikelihood());
+		proposalLnLs.push_back(modelPtr->modelLnLikelihood());
 		// std::cout << "\t" << proposalLnLs.back() << "\n";
 
 		// calculate probabilities (unnormalized)
@@ -1012,7 +1077,7 @@ void Mcmc::proposeAddJump(void)
 	double lnPriorRatio = 0.0;
 
 	// calculate the likelihood ratio
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood();
 	double lnLikelihoodRatio = newLnL - oldLnL;
 
 	// accept or reject MH ratio
@@ -1065,7 +1130,7 @@ void Mcmc::proposeRemoveJump(void)
 		double lnPriorRatio = 0.0;
 
 		// calculate the likelihood ratio
-		newLnL = modelPtr->modelLogLikelihood();
+		newLnL = modelPtr->modelLnLikelihood();
 		double lnLikelihoodRatio = newLnL - oldLnL;
 
 		// accept or reject MH ratio
@@ -1140,7 +1205,7 @@ void Mcmc::proposeBranchRescale(void)
 
 	// calculate the likelihood ratio
 	modelPtr->updateModel();
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood();
 
 	double lnLikelihoodRatio = newLnL - oldLnL;
 
@@ -1208,7 +1273,7 @@ void Mcmc::proposeResizeJumps(void)
 
 	// calculate the likelihood ratio
 	// modelPtr->updateModel();
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood();
 	double lnLikelihoodRatio = newLnL - oldLnL;
 
 	// accept or reject MH ratio
@@ -1293,7 +1358,7 @@ void Mcmc::proposeBranchSwap(void)
 
 	// calculate the likelihood ratio
 	modelPtr->updateModel();
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood();
 
 	double lnLikelihoodRatio = newLnL - oldLnL;
 
@@ -1373,7 +1438,7 @@ void Mcmc::proposeParmRotate(void)
 
 	// calculate the likelihood ratio
 	modelPtr->updateModel();
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood();
 
 	double lnLikelihoodRatio = newLnL - oldLnL;
 
@@ -1495,7 +1560,7 @@ void Mcmc::proposeSigmaSwap(void)
 
 	// calculate the likelihood ratio
 	modelPtr->updateModel();
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood();
 
 	double lnLikelihoodRatio = newLnL - oldLnL;
 
@@ -1548,7 +1613,7 @@ void Mcmc::proposeSeating(void)
 {
 	// 0. Initialize CRP structures
 
-	oldLnL = modelPtr->modelLogLikelihood();
+	oldLnL = modelPtr->modelLnLikelihood();
 	int numRegTables = tableListPtr->size();
 	int numAuxTables = auxCRP; //auxCRP * 5 + 1;					// constant
 	// int numAuxTables = auxCRP * numRegTables + 1;				// proportional
@@ -1798,7 +1863,7 @@ void Mcmc::proposeSeating(void)
 
 
 	// update the model lnL
-	newLnL = modelPtr->modelLogLikelihood();
+	newLnL = modelPtr->modelLnLikelihood();
 	// std::cout << "TABLE RESEATING LNL: " << newLnL << "\n";
 	numRegTables = tableListPtr->size();
 	// std::cout << "END:   numRegTables = " << numRegTables << "\n";
@@ -1836,3 +1901,114 @@ void Mcmc::proposeSeating(void)
 }
 #endif
 
+
+#if 0
+void Mcmc::proposeChangeJump(void)
+{
+	// choose branch
+	Table* t = tableListPtr->front();
+	Node* p = topologyPtr->getRandomNodeByLength();
+
+	// calculate the proposal ratio
+	//double lnProposalRatio = modelPtr->proposeRemoveJump(p, t->getParmVector(), 1);
+	double lnProposalRatio = modelPtr->proposeJumpSize(p, t->getParmVector());
+
+	// calculate the prior ratio
+	double lnPriorRatio = 0.0;
+
+	// calculate the likelihood ratio
+	newLnL = modelPtr->modelLnLikelihood();
+	newKb = topologyPtr->getRoot()->getKb();
+	newKj = topologyPtr->getRoot()->getKj();
+	double lnLikelihoodRatio = newLnL - oldLnL;
+	if (useSteppingStone)
+	{
+		//lnLikelihoodRatio *= betaSteppingStone;
+		lnLikelihoodRatio = betaSteppingStone*(newKb - oldKb) + (newKj - oldKj);
+	}
+
+	// accept or reject MH ratio
+	bool acceptState = false;
+	double r = safeExp( lnLikelihoodRatio + lnPriorRatio + lnProposalRatio );
+	double u = randomPtr->uniformRv();
+	if (u < r)
+	{
+		acceptState = true;
+	}
+
+#if DEBUG2
+	std::cout << "\tlnProposalRatio:\t" << lnProposalRatio << "\n";
+	std::cout << "\tlnPriorRatio:\t\t" << lnPriorRatio << "\n";
+	std::cout << "\toldLnL:\t\t\t" << oldLnL << "\n";
+	std::cout << "\tnewLnL:\t\t\t" << newLnL << "\n";
+	std::cout << "\tlnLikeRatio:\t\t" << lnLikelihoodRatio << "\n";
+	std::cout << "\tMH Ratio:\t\t" << r << " (" << lnLikelihoodRatio + lnPriorRatio + lnProposalRatio << ")\n";
+	std::cout << "\tu:\t\t\t" << u << "\t\t\t" << "r:\t" << r << "\n";
+	#endif
+
+	// update the state of the chain
+	if (acceptState == true)
+	{
+		p->copySpace(0, 1);
+		//topologyPtr->decrementNumJumps();
+		oldLnL = newLnL;
+		oldKb = newKb;
+		oldKj = newKj;
+	}
+	else
+	{
+		p->copySpace(1, 0);
+	}
+
+	proposeStr = "n" + printInt(p->getIndex()) + "\t\tChngJmp: " + printBool(acceptState);
+}
+#endif
+/*
+void Mcmc::printTableState(int n)
+{
+	// HEADER
+	// i.e.
+	//	CYCLE
+	//		TABLE
+	//			GENE	PARAMS
+
+	if (n == 0)
+	{
+		std::string pHeaderStr = "";
+		pHeaderStr += "cycle\ttable\tname\t";
+		Table* firstTable = modelPtr->getTableListPtr()->front();
+		for (std::vector<Parm*>::const_iterator it_p = firstTable->getParmVector().begin(); it_p != firstTable->getParmVector().end(); it_p++)
+		{
+			pHeaderStr += (*it_p)->getParameterHeader();
+		}
+	//	pHeaderStr += modelPtr->getAlpha()->getParameterHeader();
+	//	pHeaderStr += "\n";
+		tableFileStrm << pHeaderStr;
+	}
+
+
+	// BODY
+
+	tableFileStrm << n << "\n";
+	for (std::list<Table*>::iterator it_t = tableListPtr->begin(); it_t != tableListPtr->end(); it_t++)
+	{
+		std::string pStr = "";
+		tableFileStrm << "\t" << printInt((*it_t)->getId()) << "\n";
+		for (std::vector<Parm*>::const_iterator it_p = (*it_t)->getParmVector().begin(); it_p != (*it_t)->getParmVector().end(); it_p++)
+		{
+			pStr += (*it_p)->getParameterStr();
+		}
+		//pStr += modelPtr->getAlpha()->getParameterStr() + "\n";
+
+		for (std::list<Patron*>::const_iterator it_i = (*it_t)->getPatronList().begin(); it_i != (*it_t)->getPatronList().end(); it_i++)
+		{
+			tableFileStrm << "\t\t" << (*it_i)->getName() << "\t" << pStr;
+		}
+	}
+	tableFileStrm << "\n";
+
+	// parmFileStrm << n << '\t' << std::fixed << std::setprecision(2) << lnL << '\t' << pStr << std::endl;
+
+}
+
+*/

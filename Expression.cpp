@@ -20,6 +20,8 @@ Expression::Expression(Settings* sp) {
 	initializeTaxaNames();
 	initializeExprData();
 
+	// print();
+
 }
 
 Expression::~Expression(void)
@@ -48,8 +50,12 @@ void Expression::initializeTaxaNames(void)
 	while (taxaStream.good())
 	{
 		std::getline(taxaStream, taxonLine);
-		taxonNames.push_back(taxonLine);
-		taxonCount++;
+		if (taxonLine != "\0")
+		{
+			taxonNames.push_back(taxonLine);
+			taxonCount++;
+			std::cout << "TAXONCOUNT: " << taxonCount << ": " << taxonLine << "\n";
+		}
 	}
 
 	numTaxa = taxonCount;
@@ -66,6 +72,7 @@ void Expression::initializeExprData(void)
 		std::cout << "INITIALIZING: Expression data\n";
 
 
+	/*
 	// Initialize FFT settings for tip data
 	int numSteps = settingsPtr->getNumSteps();
 	int halfSteps = numSteps / 2;
@@ -77,6 +84,7 @@ void Expression::initializeExprData(void)
 	{
 		theta[i] = (((i + halfSteps) % numSteps) - halfSteps) * stepSize;
 	}
+*/
 
 	// Prepare to assign Expression data to Patrons
 	std::vector<Patron*> patronVector;
@@ -140,7 +148,8 @@ void Expression::initializeExprData(void)
 			{
 				tempValues[taxaIndex].push_back(atof(field.c_str()));
 				timeIndex++;
-				//std::cout << "\t\t" << atof(field.c_str()) << "\n";
+				std::cout << "\t\t" << atof(field.c_str()) << "\n";
+				data.push_back(atof(field.c_str()));
 
 				// if there are no new timepoints, this taxon locus data has been read
 				if (exprLine.peek() == EOF)
@@ -150,7 +159,7 @@ void Expression::initializeExprData(void)
 					// if all taxa have been read, instantiate a new Patron
 					if (taxaIndex == numTaxa)
 					{
-						patronList.push_back(new Patron(firstTable, tempValues, theta, numSteps, tipStdDev, geneName, transIndex));
+	//					patronList.push_back(new Patron(firstTable, tempValues, theta, numSteps, tipStdDev, geneName, transIndex));
 						transIndex++;
 						//std::cout << "\tADDED.\n";
 					}
@@ -177,10 +186,7 @@ void Expression::initializeExprData(void)
 	//std::cout << timeIndex << "\n"; exit(1);
 	numTimepoints = timeIndex;
 
-	if (settingsPtr->getPrintStdOut())
-		std::cout << "\tRead in " << numTranscripts << " transcripts.\n\n";
-
-	delete [] theta;
+//	delete [] theta;
 	delete exprFile;
 }
 
@@ -188,10 +194,21 @@ int Expression::getIndexForTaxon(std::string queryName)
 {
 	for (unsigned int i = 0; i < taxonNames.size(); i++)
 	{
+
 		if (taxonNames[i] == queryName)
 		{
 			return i;
 		}
 	}
 	return -1;
+}
+
+void Expression::print(void)
+{
+	std::cout << "EXPRESSION: print()\n";
+	for (unsigned int i = 0; i < taxonNames.size(); i++)
+	{
+		std::cout << taxonNames[i] << "\t";
+		std::cout << transExpr[0][i][0] << "\n";
+	}
 }

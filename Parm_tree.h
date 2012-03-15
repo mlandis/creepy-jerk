@@ -50,7 +50,6 @@ public:
 	void					setAnc(Node *p)			{ anc = p; }
 	void					setV(double x)			{ v = x; }
 	void					setRatio(double x)		{ ratio = x; }
-	void					setQ(int x)				{ q = x; }
 	void					setName(std::string s)	{ name = s; }
 	void					setIndex(int x)			{ index = x; }
 	void					setDnPassIndex(int x)	{ dnPassIndex = x; }
@@ -59,23 +58,23 @@ public:
 	void					setUpdateCl(bool tf)	{ updateCl = tf; }
 	void					setUpdateTi(bool tf)	{ updateTi = tf; }
 	void					setFlag(bool tf)		{ flag = tf; }
-	MbBitfield&				getPartition(void)		{ return *part; }
+//	MbBitfield&				getPartition(void)		{ return *part; }
 
 
 	//
-	void					setMu(double x)			{ mu = x; }
-	void					setSigma(double x)		{ sigma = x; }
-	void					setK(double x)			{ k = x; }
-	void					setKb(double x)			{ kb = x; }
-	void					setKj(double x)			{ kj = x; }
-	void					addK(double x)			{ k += x; }
-	void					addMu(double x)			{ mu += x; }
-	double					getMu(void)				{ return mu; }
-	double					getSigma(void)			{ return sigma; }
-	double					getK(void)				{ return k; }
-	double					getKb(void)				{ return kb; }
-	double					getKj(void)				{ return kj; }
-	double					getRatio(void)			{ return ratio; }
+	void					setMu(double x, int space)			{ mu[space] = x; }
+	void					setSigma(double x, int space)		{ sigma[space] = x; }
+	void					setK(double x, int space)			{ k[space] = x; }
+	void					setKb(double x, int space)			{ kb[space] = x; }
+	void					setKj(double x, int space)			{ kj[space] = x; }
+	void					addK(double x, int space)			{ k[space] += x; }
+	void					addMu(double x, int space)			{ mu[space] += x; }
+	double					getMu(int space)						{ return mu[space]; }
+	double					getSigma(int space)						{ return sigma[space]; }
+	double					getK(int space)						{ return k[space]; }
+	double					getKb(int space)					{ return kb[space]; }
+	double					getKj(int space)					{ return kj[space]; }
+	double					getRatio(void)						{ return ratio; }
 	void					like(void);
 
 	void					addJump(double j, int space);
@@ -84,25 +83,22 @@ public:
 
 	int						getActiveParm(void)		{ return activeParm; }
 	bool					getUpdateParm(void)		{ return updateParm; }
-	int						getJumpCount(int x)		{ return jumpCount[x]; }
-	std::vector<double>&	getJumpSize(int x)		{ return jumpSize[x]; }
-	int						getJumpCount(void)		{ return jumpCount[activeParm]; }
-	std::vector<double>&	getJumpSize(void)		{ return jumpSize[activeParm]; }
-	double					getSumJumpSize(void)	{ return sumJumpSize[activeParm]; }
-	double					getLnProbJumpCount(int x)	{ return lnProbJumpCount[x]; }
-	std::vector<double>&	getLnProbJumpSize(int x)	{ return lnProbJumpSize[x]; }
-	double					getSumJumpSize(int x)	{ return sumJumpSize[x]; }
-	double					getSumLnProbJumpSize(int x)	{ return sumLnProbJumpSize[x]; }
-
-
 	void					setActiveParm(int x)	{ activeParm = x; }
 	void					setUpdateParm(bool tf)	{ updateParm = tf;}
-	void					setJumpCount(int x)	{ jumpCount[1] = x; }
-	void					setLnProbJumpCount(double x) { lnProbJumpCount[1] = x; }
-	void					setJumpSize(std::vector<double>& x)	{ jumpSize[1] = x; }
-	void					setLnProbJumpSize(std::vector<double>& x) { lnProbJumpSize[1] = x; }
-	void					setSumJumpSize(double x) { sumJumpSize[1] = x; }
-	void					setSumLnProbJumpSize(double x) { sumLnProbJumpSize[1] = x; }
+
+	int						getJumpCount(int space)									{ return jumpCount[space]; }
+	std::vector<double>&	getJumpSize(int space)									{ return jumpSize[space]; }
+	double					getSumJumpSize(int space)								{ return sumJumpSize[space]; }
+	double					getLnProbJumpCount(int space)							{ return lnProbJumpCount[space]; }
+	std::vector<double>&	getLnProbJumpSize(int space)							{ return lnProbJumpSize[space]; }
+	double					getSumLnProbJumpSize(int space)							{ return sumLnProbJumpSize[space]; }
+
+	void					setJumpCount(int x, int space)							{ jumpCount[space] = x; }
+	void					setJumpSize(std::vector<double>& x, int space)			{ jumpSize[space] = x; }
+	void					setSumJumpSize(double x, int space)						{ sumJumpSize[space] = x; }
+	void					setLnProbJumpCount(double x, int space)		 			{ lnProbJumpCount[space] = x; }
+	void					setLnProbJumpSize(std::vector<double>& x, int space)	{ lnProbJumpSize[space] = x; }
+	void					setSumLnProbJumpSize(double x, int space)				{ sumLnProbJumpSize[space] = x; }
 
 
 
@@ -113,7 +109,6 @@ private:
 	Node*					anc;
 	int						index;
 	int						dnPassIndex;
-	int						q;						// number of changes
 	double					v;						// branch length
 	double					ratio;
 	std::string				name;
@@ -122,16 +117,16 @@ private:
 	bool					updateCl;
 	bool					updateTi;
 	bool					flag;
-	MbBitfield*				part;
+//	MbBitfield*				part;
 
 	// sampling (non-FFT) jump diffusion
 	int						activeParm;
 	bool					updateParm;
-	double					mu;
-	double					sigma;
-	double					k;						// likelihood at node
-	double					kb;						// Brownian motion likelihood component
-	double					kj;						// jump kernel likelihood component
+	double					mu[2];
+	double					sigma[2];
+	double					k[2];						// likelihood at node
+	double					kb[2];						// Brownian motion likelihood component
+	double					kj[2];						// jump kernel likelihood component
 	int						jumpCount[2];
 	double					lnProbJumpCount[2];
 	std::vector<double>		jumpSize[2];
@@ -182,10 +177,10 @@ public:
 	void			flipAllActiveCls(void);
 	void			flipAllActiveTis(void);
 	void			flipAllActiveParms(void);
-	void			copyInactiveJumpsToActiveJumps(void);
-	void			initializeTaxonBipartitions(void);
-	void			getTaxonBipartitions(void);
-	void			printTaxonBipartitions(void);
+	//void			copyInactiveJumpsToActiveJumps(void);
+	//void			initializeTaxonBipartitions(void);
+	//void			getTaxonBipartitions(void);
+	//void			printTaxonBipartitions(void);
 	void			printJumpSamples(int space);
 	void			printJumpSummary(void);
 	void			printJumpSizes(int space);

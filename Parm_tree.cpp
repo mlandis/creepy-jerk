@@ -14,7 +14,6 @@ Node::Node(void) {
 	anc			= NULL;
 	index		= 0;
 	dnPassIndex	= 0;
-	q			= 0;
 	v			= 1.0;
 	ratio		= 0.0;
 	name		= "";
@@ -23,16 +22,21 @@ Node::Node(void) {
 	updateCl	= false;
 	updateTi	= false;
 	flag		= false;
-	part		= new MbBitfield;
+//	part		= new MbBitfield;
 
 	// node values
 	activeParm = 0;
 	updateParm = false;
-	mu = 0.0;
-	sigma = 0.0;
-	k = 0.0;
-	kb = 0.0;
-	kj = 0.0;
+	mu[0] = 0.0;
+	mu[1] = 0.0;
+	sigma[0] = 0.0;
+	sigma[1] = 0.0;
+	k[0] = 0.0;
+	k[1] = 0.0;
+	kb[0] = 0.0;
+	kb[1] = 0.0;
+	kj[0] = 0.0;
+	kj[1] = 0.0;
 
 	// sampled jump values
 	jumpCount[0] = 0;
@@ -64,11 +68,16 @@ void Node::copySpace(int i, int j)
 	jumpCount[i] = jumpCount[j];
 	jumpSize[i] = jumpSize[j];
 	sumJumpSize[i] = sumJumpSize[j];
+	kb[i] = kb[j];
+	kj[i] = kj[j];
+	k[i] = k[j];
+	mu[i] = mu[j];
+	sigma[i] = sigma[j];
 }
 
 Node::~Node(void) {
 
-	delete part;
+	//delete part;
 }
 
 
@@ -86,17 +95,17 @@ Topology::Topology(MbRandom *rp, Expression *ep, double vp) {
 	treeLength = 0.0;
 	numJumps = 0;
 
-	//if (sp->getPrintStdOut())
+//	if (sp->getPrintStdOut())
 	{
 		std::cout << "INITIALIZING: Topology\n";
 	}
 
 	// build a random tree
 	buildRandomTree(ep);
-	initializeTaxonBipartitions();
+	//initializeTaxonBipartitions();
 	setBranchRatios();
-	getTaxonBipartitions();
-	//if (sp->getPrintStdOut())
+	//getTaxonBipartitions();
+//	if (sp->getPrintStdOut())
 	{
 		print();
 		std::cout << "\n";
@@ -122,7 +131,7 @@ Topology::Topology(MbRandom *rp, Expression *ep, Settings *sp, double vp) {
 
 	if (sp->getPrintStdOut())
 	{
-		std::cout << "INITIALIZING: Topology\n";
+		std::cout << "TOPOLOGY: Initializing from Newick string\n";
 	}
 
 	// get Newick string
@@ -137,14 +146,17 @@ Topology::Topology(MbRandom *rp, Expression *ep, Settings *sp, double vp) {
 	getline(treeFileStream, treeStr);
 	treeFileMgr.closeFile(treeFileStream);
 
+	std::cout << "TOPOLOGY: Newick string\n" << treeStr << "\n";
+
 	// build tree from string
 	buildTreeFromNewickString(ep, treeStr);
-	initializeTaxonBipartitions();
+	//initializeTaxonBipartitions();
 	setBranchRatios();
-	getTaxonBipartitions();
+	//getTaxonBipartitions();
 
 	if (sp->getPrintStdOut())
 	{
+		std::cout << "TOPOLOGY: Initialization successful\n";
 		print();
 		std::cout << "\n";
 	}
@@ -309,7 +321,6 @@ void Topology::buildTreeFromNewickString(Expression *ep, std::string &ts) {
 			break;
 	}
 
-
 	// check that the number of taxa in the tree description is the same as the number of taxa in the alignment
 	if (nt != numTaxa) {
 		std::cerr << "ERROR: The tree file is not the right size" << std::endl;
@@ -318,8 +329,7 @@ void Topology::buildTreeFromNewickString(Expression *ep, std::string &ts) {
 	}
 
 	// show the tokens
-
-	// for (std::vector<std::string>::iterator p = parsedNewick.begin(); p != parsedNewick.end(); p++)
+	//for (std::vector<std::string>::iterator p = parsedNewick.begin(); p != parsedNewick.end(); p++)
 	//	std::cout << "token = \"" << (*p) << "\"" << "\n";
 
 	// allocate the nodes
@@ -528,9 +538,9 @@ void Topology::clone(const Topology &t) {
 		q->setActiveParm(p->getActiveParm());
 		q->setUpdateParm(p->getUpdateParm());
 		int space = p->getActiveParm();
-		q->setJumpCount(p->getJumpCount(space));
-		q->setJumpSize(p->getJumpSize(space));
-		q->setSumJumpSize(p->getSumJumpSize(space));
+		q->setJumpCount(p->getJumpCount(space), space);
+		q->setJumpSize(p->getJumpSize(space), space);
+		q->setSumJumpSize(p->getSumJumpSize(space), space);
 
 		if (p == t.root)
 			root = q;
@@ -825,7 +835,7 @@ void Topology::showNodes(Node *p, int indent) {
 		std::cout << std::setw(2) << dex(p->getLft()) << ",";
 		std::cout << std::setw(2) << dex(p->getRht()) << ",";
 		std::cout << std::setw(2) << dex(p->getAnc()) << ") ";
-		std::cout << p->getPartition() << " ";
+		//std::cout << p->getPartition() << " ";
 		std::cout << std::fixed << std::setprecision(5) << p->getV() << " ";
 		std::cout << p->getName() << " ";
 		if (p == root)
@@ -885,6 +895,7 @@ void Topology::writeTree(Node *p, std::stringstream &ss) {
 	}
 }
 
+/*
 void Topology::initializeTaxonBipartitions(void) {
 
 	for (int n = 0; n < numNodes; n++) {
@@ -896,7 +907,10 @@ void Topology::initializeTaxonBipartitions(void) {
 			p->getPartition().setBit(p->getIndex());
 	}
 }
+*/
 
+
+/*
 void Topology::getTaxonBipartitions(void) {
 
 	for (int n = 0; n < numNodes; n++) {
@@ -929,6 +943,9 @@ void Topology::printTaxonBipartitions(void) {
 		}
 	}
 }
+
+*/
+
 
 void Topology::printJumpSamples(int space) {
 
@@ -970,7 +987,7 @@ void Topology::printJumpSamples(int space) {
 
 void Topology::printJumpSizes(int space) {
 
-	std::cout << std::setw(10) << "i\tv\tx\n";
+	std::cout << std::setw(10) << "index\tlength\tjump\n";
 
 	std::vector<double>::iterator it_x;
 	for (int n = 0; n < numNodes; n++)
@@ -1037,6 +1054,7 @@ void Topology::printJumpSummary(void) {
 	std::cout << "n " << sumJumpCount << "\tpr_n " << sumLnProbJumpCount << "\tx " << sumJumpSize << "\tpr_x " << lnProbSumJumpSize << "\n";
 }
 
+/*
 void Topology::copyInactiveJumpsToActiveJumps(void)
 {
 	for (int n = 0; n < numNodes; n++)
@@ -1045,13 +1063,14 @@ void Topology::copyInactiveJumpsToActiveJumps(void)
 		int activeParm = p->getActiveParm();
 		int inactiveParm = (activeParm == 0 ? 1 : 0);
 
-		p->setJumpCount(p->getJumpCount(inactiveParm));
-		p->setJumpSize(p->getJumpSize(inactiveParm));
-		p->setLnProbJumpCount(p->getLnProbJumpCount(inactiveParm));
-		p->setSumJumpSize(p->getSumJumpSize(inactiveParm));
-		p->setSumLnProbJumpSize(p->getSumLnProbJumpSize(inactiveParm));
+		p->setJumpCount(p->getJumpCount(inactiveParm), space);
+		p->setJumpSize(p->getJumpSize(inactiveParm), space);
+		p->setLnProbJumpCount(p->getLnProbJumpCount(inactiveParm), space);
+		p->setSumJumpSize(p->getSumJumpSize(inactiveParm), space);
+		p->setSumLnProbJumpSize(p->getSumLnProbJumpSize(inactiveParm), space);
 	}
 }
+*/
 
 Tree::Tree(MbRandom *rp, std::string pn, Expression *ep, double vp) : Parm(rp, pn) {
 

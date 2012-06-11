@@ -8,6 +8,7 @@
 
 #include "Settings.h"
 
+#define NORM_INV_GAUSS 0
 #define ALPHA_STABLE_NUMINT 1
 #define JUMP_NORM_NUMINT 2
 #define JUMP_NORM_PDF 3
@@ -15,7 +16,7 @@
 #define BM_ONLY 5
 #define VAR_GAMMA_NUMINT 6
 #define BM_JUMP_PDF 7
-#define LAPLACE_NUMINT 8
+#define DBL_EXP_NUMINT 8
 #define SKEW_NORMAL_NUMINT 9
 
 
@@ -25,7 +26,7 @@ Settings::Settings(int argc, char** argv)
 	// Default initialization for Settings
 
 	// Model settings
-	seed = 81;
+	seed = 53;
 	modelType = 4;
 	fixBranches = true;
 	tuningBM = 0.9995;
@@ -47,8 +48,8 @@ Settings::Settings(int argc, char** argv)
 	finalStep = 10000.0;	//300.0;
 
 	// MCMC settings
-	numCycles = 2000000;
-	printFreqMH = 1000;
+	numCycles = pow(10,6)*2;
+	printFreqMH = 1;
 	printFreqJump = printFreqMH;
 	printFreqStdOut = printFreqMH;
 	printFreqCRP = printFreqMH;
@@ -78,6 +79,7 @@ Settings::Settings(int argc, char** argv)
 	taxaFileName = simName + ".taxa.txt";
 
 
+	simName = "gogo";
 	taxaFileName = "primates.eastman.isler_pruned.taxa.txt";
 	treeFileName = "primates.eastman.isler_pruned.tree.txt";
 	exprFileName = "primates.eastman.isler_pruned.mass.data.txt";
@@ -85,12 +87,16 @@ Settings::Settings(int argc, char** argv)
 	//exprFileName = "primates.eastman.isler_pruned.massecvratio.data.txt";
 
 
-
+/*
 
 	taxaFileName = "taxa.txt";
 	treeFileName = "tree.txt";
-	exprFileName = "VG_Sig.BM_.05_Kap.VG_10_Sig.VG_.1_20.data.txt";
+	exprFileName = "isler.pruned.VG.Sig.BM_.05_Kap.VG_9_Sig.VG_.1_1.data.txt";
 
+	taxaFileName = "series.taxa.txt";
+	treeFileName = "series.tree.txt";
+	exprFileName = "series.VG_Sig.BM_.05_Kap.VG_100_Sigma.VG_.1_9.data.txt";
+*/
 	// Assign settings arguments
 	setArguments(argc, argv);
 

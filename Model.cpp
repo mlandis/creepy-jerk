@@ -19,6 +19,7 @@
 #define DEBUG_QAWO 0
 #define DEBUG_BESSEL 0
 
+#define NORM_INV_GAUSS_BESSEL 0
 #define ALPHA_STABLE_NUMINT 1
 #define JUMP_NORM_NUMINT 2
 #define JUMP_NORM_PDF 3
@@ -26,7 +27,7 @@
 #define BM_ONLY 5
 #define VAR_GAMMA_NUMINT 6
 #define BM_JUMP_PDF 7
-#define LAPLACE_NUMINT 8
+#define DBL_EXP_NUMINT 8
 #define SKEW_NORMAL_NUMINT 9
 
 #define PDF 0
@@ -47,10 +48,10 @@ double poissonNormal(double k, void* params)
 	double lam_jn = p[1];
 	double sig_jn = p[2];
 	double t = p[3];
-	double tuningBM = p[4];
+	double tuning_BM = p[4];
 	double x = p[5];
 
-	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double left = -pow(sig_bm,2) * t * (1 - tuning_BM) * k * k / (2 * x * x);
 	double right = t * lam_jn * ( exp(-pow(sig_jn,2) * k * k / (2 * x * x) ) - 1 );
 	return exp(left + right);
 }
@@ -70,10 +71,10 @@ double alphaStable(double k, void* params)
 	double alpha = p[1];
 	double c = p[2];
 	double t = p[3];
-	double tuningBM = p[4];
+	double tuning_BM = p[4];
 	double x = p[5];
 
-	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double left = -pow(sig_bm,2) * t * (1 - tuning_BM) * k * k / (2 * x * x);
 	double right = -pow(fabs(c * k / x), alpha) * t;
 
 	return exp(left + right);
@@ -95,10 +96,10 @@ double halfSkewNormal(double k, void* params)
 	double alpha = p[1];
 	double c = p[2];
 	double t = p[3];
-	double tuningBM = p[4];
+	double tuning_BM = p[4];
 	double x = p[5];
 
-	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double left = -pow(sig_bm,2) * t * (1 - tuning_BM) * k * k / (2 * x * x);
 	double right = -pow(fabs(c * k / x), alpha) * t;
 
 	return exp(left + right);
@@ -118,10 +119,10 @@ double varianceGamma(double k, void* params)
 	double kap_vg = p[1];
 	double sig_vg = p[2];
 	double t = p[3];
-	double tuningBM = p[4];
+	double tuning_BM = p[4];
 	double x = p[5];
 
-	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
+	double left = -pow(sig_bm,2) * t * (1 - tuning_BM) * k * k / (2 * x * x);
 	double right = pow(1.0 + sig_vg * sig_vg * k * k / (2 * x * x * kap_vg) , -kap_vg * t);
 
 	return exp(left + right);
@@ -141,11 +142,11 @@ double doubleExponential(double k, void* params)
 	double lam_de = p[1];
 	double bee_de = p[2];
 	double t = p[3];
-	double tuningBM = p[4];
+	double tuning_BM = p[4];
 	double x = p[5];
 
-	double left = -pow(sig_bm,2) * t * (1 - tuningBM) * k * k / (2 * x * x);
-	double right = t * lam_de * ( exp(-pow(1,2) * k * k / (2 * x * x) ) - 1 );
+	double left = -pow(sig_bm,2) * t * (1 - tuning_BM) * k * k / (2 * x * x);
+	double right = t * lam_de * pow(1 + k * k * bee_de * bee_de, -1) - 1;
 
 	return exp(left + right);
 }
@@ -160,7 +161,7 @@ Model::Model(Expression* ep, MbRandom* rp, Settings* sp, Topology* tp)
 
 	numTaxa = expressionPtr->getNumTaxa();
 	numNodes = 2 * numTaxa - 1;
-	numBranches = numNodes - 1;	// [numBranches+1 == numNodes] indexes the root which has no branch.
+	numBranches = numNodes - 1;	// [numBranches+1 == numNodes] indexes the root, which has no branch.
 	numTranscripts = expressionPtr->getNumTranscripts();
 	numTimepoints = expressionPtr->getNumTimepoints();
 
@@ -248,16 +249,15 @@ void Model::initializeParms(void)
 	}
 	else if (modelType == VAR_GAMMA_BESSEL) // Bessel Variance Gamma
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));//, 0.05));
-		initialParms.push_back(new Kappa(randomPtr, "Kap-VG"));//, 10.0));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));//, 0.1));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Kappa(randomPtr, "Kap-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
 		useJumpKernel = true;
 		evalType = BESSEL;
 		tuningBM = 1.0;							// does not require conditioning on brLen
-		F.function = &varianceGamma;
 	}
 	else if (modelType == BM_ONLY) // Brownian motion only
 	{
@@ -283,6 +283,18 @@ void Model::initializeParms(void)
 		proposalProbs.push_back(1.0);
 		useJumpKernel = true;
 		evalType = PDF;
+	}
+	else if (modelType == DBL_EXP_NUMINT)
+	{
+		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "Lam-DE"));
+		initialParms.push_back(new Sigma(randomPtr, "Sig-DE"));
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		proposalProbs.push_back(1.0);
+		useJumpKernel = true;
+		evalType = NUMINT;
+		F.function = &doubleExponential;
 	}
 	else
 	{
@@ -323,7 +335,10 @@ void Model::initializeTips(void)
 		p->setSigma(0.0, 1);
 		if (useJumpKernel)
 		{
-			p->setSumJumpSize(randomPtr->normalRv(0, 0.5), 1);
+			double sumJumpSize = randomPtr->normalRv(0, 0.5);
+			if (p->getV() == 0.0)
+				sumJumpSize = 0.0;
+			p->setSumJumpSize(sumJumpSize, 1);
 		}
 		p->setK(0.0, 1);
 		p->setKb(0.0, 1);
@@ -369,6 +384,8 @@ double Model::proposeJumpSize(Node* p, const std::vector<Parm*>& parmVector, int
 #if DEBUG2
 		std::cout << "\tjump at n" << p->getIndex() << ":\t" << jumpSize << " ->\t" << jumpSizeNew << "\n";
 #endif
+		if (p->getV() == 0.0)
+			jumpSizeNew = 0.0;
 		p->setSumJumpSize(jumpSizeNew, space);
 		return lnProposalRatio;
 	}
@@ -393,7 +410,12 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 	double k = 0.0;
 	double newK = 0.0;
 
-	if (modelType == ALPHA_STABLE_NUMINT || modelType == JUMP_NORM_NUMINT || modelType == VAR_GAMMA_NUMINT)// || modelType == VAR_GAMMA_BESSEL)
+	// for time series, do nothing
+	if (p->getV() == 0.0) {
+		return 0.0;
+	}
+
+	if (modelType == ALPHA_STABLE_NUMINT || modelType == JUMP_NORM_NUMINT || modelType == VAR_GAMMA_NUMINT || modelType == DBL_EXP_NUMINT)
 	{
 		double x = p->getSumJumpSize(space);
 
@@ -438,11 +460,8 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 		params.push_back(fabs(x));
 		F.params = &params;
 
-	//	tuningBM = 1.0;
-
 		// integrate
 		double a = 0.0; // integrate from a to +Inf
-	//	double omega = 1.0;//p->getSumJumpSize(space);
 		double result;
 		double error;
 
@@ -451,7 +470,7 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 #endif
 
 		gsl_integration_qawf(&F, a, integralError, workspaceSize, storeWorkspace, cycleWorkspace, trigTable, &result, &error);
-	  //  gsl_integration_qawo(&F, a, 0, 1e-7, workspaceSize, storeWorkspace, trigTable, &result, &error);
+		// gsl_integration_qawo(&F, a, 0, 1e-7, workspaceSize, storeWorkspace, trigTable, &result, &error);
 		k = log(result/(PI * fabs(x)));
 
 #if DEBUG_MSG_QAWO
@@ -525,35 +544,49 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 	return k;
 }
 
-#if 0
-double Model::besselLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, int space)
-{
-	Table* t = tableList.front();
-
-	if (modelType == VAR_GAMMA)
-	{
-		double v = p->getV();
-		double kap_vg = parmVector[1];
-		double sig_vg = parmVector[2];
-
-		// m = 0, theta = 0, nu = 1 / kappa
-		// double gsl_sf_bessel_Knu (double nu, double x)
-		double x = p->getSumJumpSize(space) - v * kap_vg * log(1 - pow(sig_vg, 2) / 2);
-		double k_arg = pow(sig_vg, -2) * pow(x * x * (2 * sig_vg * sig_vg * kap_vg), 0.5);
-		double h_first = 2 * pow(kap_vg, -v * kap_vg) / (pow(2 * PI, 0.5) * exp(randomPtr->lnGamma(v * kap_vg));
-		double h_second = pow(x * x / (2 * sig_vg * sig_vg * kap_vg), 0.5 * v * kap_vg - 0.25);
-		double h_third = gsl_sf_bessel_Knu(v * kap_vg - 0.5, k_arg);
-		return log(h_first * h_second * h_third);
-	}
-}
-#endif
-
 double Model::besselLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, int space)
 {
 
 	double k = 0.0;
 
 	if (modelType == VAR_GAMMA_BESSEL)
+	{
+		double v = p->getV();
+		double sig_bm = parmVector[0]->getValue();
+		double kap_vg = parmVector[1]->getValue();
+		double sig_vg = parmVector[2]->getValue();
+		double xx = fabs(p->getSumJumpSize(space));
+
+		double x = xx;
+		//double x = xx - kap_vg * v * log(1 - 0.5 * sig_vg * sig_vg / kap_vg);
+
+		/*
+		double h_bessel_arg1 = fabs(v * kap_vg - 0.5);
+		double h_bessel_arg2 = pow(2 * kap_vg, 0.5) * x / sig_vg;
+		double h_bessel = gsl_sf_bessel_lnKnu(h_bessel_arg1, h_bessel_arg2);
+
+		double h_top = (0.75 - 0.5 * v * kap_vg) * log(2) + (0.25 + 0.5 * v * kap_vg) * log(kap_vg) + (0.5 - v * kap_vg) * log(sig_vg / x);
+		double h_bottom = 0.5 * log(PI * sig_vg * sig_vg) + gsl_sf_lngamma(v * kap_vg);
+		k = h_top + h_bessel - h_bottom;
+		*/
+
+		double h_bessel_arg1 = fabs(v / kap_vg - 0.5);
+		double h_bessel_arg2 = pow(2 / kap_vg, 0.5) * x / sig_vg;
+		double h_bessel = gsl_sf_bessel_lnKnu(h_bessel_arg1, h_bessel_arg2);
+
+		double h_top = (0.75 - 0.5 * v / kap_vg) * log(2) + (0.25 + 0.5 * v / kap_vg) * -log(kap_vg) + (0.5 - v / kap_vg) * log(sig_vg / x);
+		double h_bottom = 0.5 * log(PI * sig_vg * sig_vg) + gsl_sf_lngamma(v / kap_vg);
+		k = h_top + h_bessel - h_bottom;
+
+#if DEBUG_BESSEL
+		std::cout << "\tBessel\n";
+		std::cout << "\t\tv\t" << v << "\tkap_vg\t" << kap_vg << "\tsig_vg\t" << sig_vg << "\tsig_bm\t" << sig_bm << "\tx\t" << x << "\n";
+		std::cout << "\t\thba1\t" << h_bessel_arg1 << "\thba2\t" << h_bessel_arg2 <<"\n";
+		std::cout << "\t\tk\t" << k <<  " = " << h_top << " + " << h_bessel << " - " << h_bottom << "\n";
+#endif
+	}
+
+	else if (modelType == NORM_INV_GAUSS_BESSEL)
 	{
 		double v = p->getV();
 		double sig_bm = parmVector[0]->getValue();
@@ -607,6 +640,7 @@ double Model::tableLnLikelihood(Table* t, int space)
 	double lnL = 0.0;
 	const std::vector<Parm*> parmVector = t->getParmVector();
 
+
 	// update lnL values at tips according to sampled values
 	if (useJumpKernel)
 	{
@@ -621,6 +655,8 @@ double Model::tableLnLikelihood(Table* t, int space)
 		}
 	}
 
+	//  drift is accounted for in besselLnLikelihood()
+
 	// Pruning-wise, calculate the likelihood for each branch in the tree
 	// NOTE: driftLnLikelihood() calls jumpLnLikelihood()
 	for (int j = 0; j < numNodes; j++)
@@ -634,6 +670,7 @@ double Model::tableLnLikelihood(Table* t, int space)
 	}
 
 	lnL = topologyPtr->getRoot()->getK(space);
+
 	return lnL;
 }
 
@@ -692,8 +729,9 @@ double Model::driftOnlyLnLikelihood(Node* p, const std::vector<Parm*>& parmVecto
 	double sigmaBM = parmVector[0]->getValue();
 	double sigmaBM2 = sigmaBM * sigmaBM;
 	double lnL = 0.0;
-	//for (std::list<Patron*>::iterator it_p = patronList.begin(); it_p != patronList.end(); it_p++)
-	//{
+
+
+
 	#if DEBUG
 					//std::cout << "\tPATRON ID:\t" << (*it_p)->getId() << "\n";
 					std::cout << "p->getIndex() = " << p->getIndex() << "\tp->getLft()->getIndex() = " << p->getLft()->getIndex() << "\tp->getRht()->getIndex() = " << p->getRht()->getIndex() << "\n";
@@ -707,6 +745,7 @@ double Model::driftOnlyLnLikelihood(Node* p, const std::vector<Parm*>& parmVecto
 	double muR = p->getRht()->getMu(space);
 	double sigmaR = p->getRht()->getSigma(space);
 	double kR = p->getRht()->getK(space);
+
 
 	// rescale branches according to descendants' variance
 	double tL = tauL + (sigmaL * sigmaL) / sigmaBM2;

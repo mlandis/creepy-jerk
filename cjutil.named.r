@@ -1,5 +1,7 @@
+library(RColorBrewer)
 library(ape)
 library(phylobase)
+require(coda)
 
 auto_cor =	function(	data,
 				lag
@@ -18,12 +20,14 @@ plotMcmc = 	function(	fn,
 				func_name = "",
 				true_func,
 				func,
-				...
+				...,
+				make_plot=T
 			)
 {
 	
 	x = read.table(fn, header=T)
 	xx = x[b:nrow(x),]
+	if (make_plot) {
 	dev.new()
 	parm_names = colnames(xx)[5:ncol(xx)]
 	num_plots = length(parm_names)
@@ -34,7 +38,7 @@ plotMcmc = 	function(	fn,
 	}
 	if (plot_auto)
 	{
-		par(mfrow=c(num_lots,4),oma=c(0,0,2,0))
+		par(mfrow=c(num_plots,4),oma=c(0,0,2,0))
 	}
 	else
 	{
@@ -48,7 +52,7 @@ plotMcmc = 	function(	fn,
 		plot(xx[,4+i],type="l",ylab=parm_names[i],main="Trace")
 		if (plot_auto)
 		{
-			auto = sapply(1:max_lag,function(i) {auto_cor(xx[,4+i],i)})
+			auto = sapply(1:max_lag,function(j) {auto_cor(xx[,4+i],j)})
 			plot(auto,ylab="autocorrelation",main="Autocorrelation")	
 		}
 	}
@@ -73,21 +77,52 @@ plotMcmc = 	function(	fn,
 	
 #	dev.new()
 #	plot(xx$lnL)
-	
+	}
 	return(xx)
 }
 
+aicm = function(x) {
+	return(2*var(x$kb) - 2*mean(x$kb))
+}
+
+
+plotMcmcList = function(
+				fn,
+				n,
+                                b = 100,
+                                trueparm = c(),
+                                plot_auto = F,
+                                max_lag = 50,
+                                other_func = F,
+                                func_name = "",
+                                true_func,
+                                func,
+                                ...,
+				make_plot=T
+		)
+{
+	xx = list()
+	for (i in 1:n)
+	{
+		xx[[i]] = plotMcmc(paste(fn,i,".data.txt.p",sep=""), b=b, trueparm=trueparm, plot_auto=plot_auto, max_lag=max_lag, other_func=other_func, func_name=func_name, true_func=true_func, func=func, make_plot=make_plot, ...)
+	}
+	return(xx)
+}
+		
+
 plotJumps =	function(
-				parmFp = "",
-				jumpFp = "",
-				treeFp = "~/data/expr_phylo/input/primates.eastman.isler_pruned.tree.txt",
-				taxaFp = "~/data/expr_phylo/input/primates.eastman.isler_pruned.taxa.txt",
+				pjFp = "",
+				treeFp = "~/data/expr_phylo/input/tree.txt",
+				taxaFp = "~/data/expr_phylo/input/taxa.txt",
+				#treeFp = "~/data/expr_phylo/input/primates.eastman.isler_pruned.tree.txt",
+				#taxaFp = "~/data/expr_phylo/input/primates.eastman.isler_pruned.taxa.txt",
 				b = 100,
 				plot_auto = F,
 				max_lag = 50
 			)
 {
-
+	parmFp = paste(pjFp,"p",sep="")
+	jumpFp = paste(pjFp,"j",sep="")
 	# read taxa
 	taxa = scan(file=taxaFp,what="") 
 
@@ -132,11 +167,12 @@ plotJumps =	function(
 	medNodeJumps = apply(dj[,(length(tipLabels(tRaw))+1):ncol(dj)], 2, median)
 	
 	# augment trees
+	edgeLength(tRaw)[length(edgeLength(tRaw))] = 0.0
 	edgeLength(tAbsJump) = c(as.vector(abs(meanJumps)), NA) / edgeLength(tRaw)
 	edgeLength(tRawJump) = c(as.vector(abs(meanJumps)), NA)
 	edgeLength(tVarJump) = c(as.vector(abs(varJumps)), NA)
 	edgeLength(tBoth) = edgeLength(tRaw) * meanDrift + c(abs(as.vector(meanJumps)), NA)
-	edgeLength(tBoth2) = (edgeLength(tRaw) * meanDrift + c(abs(as.vector(meanJumps)), NA))/edgeLength(tRaw)
+	edgeLength(tBoth2) = (edgeLength(tRaw) * meanDrift + c(abs(as.vector(meanJumps)), NA)) / edgeLength(tRaw)
 
 	# plot trees
 	dev.new()
@@ -289,3 +325,79 @@ hm = function(L,b=100)
 	return(length(M) / sum(1/M))
 }
 
+HPD = function(mcmc_out, func) {info = matrix(nrow=length(mcmc_out),ncol=3); for (i in 1:length(mcmc_out)) {HPDi = HPDinterval(mcmc(func(mcmc_out[[i]]))); info[i,1] = HPDi[1,1]; info[i,3] = HPDi[1,2]; dens = density(func(mcmc_out[[i]])); info[i,2] = dens$x[which.max(dens$y)]}; return(info) }
+
+kurt_vg = function(x) {
+	x$Kap.VG * x$Sig.VG^4 / (x$Sig.VG^2 + x$Sig.BM^2)^2
+}
+kurt_jn = function(x) {
+	x$Lam.JN * x$Sig.JN^4 / (x$Lam.JN * x$Sig.JN^2 + x$Sig.BM^2)^2
+}
+
+var_vg = function(x) {
+	x$Sig.VG^2 + x$Sig.BM^2
+}
+
+var_jn = function(x) {
+	x$Lam.JN * x$Sig.JN^2 + x$Sig.BM^2
+}
+
+##for (i in 2:ncol(mass.jn.8.j)) {plot(density(mass.jn.8.j[,i]),main=paste("Branch ", i, ", Length = ", primate.length[i-1],sep=""));lines(density(mass.as.8.j[,i]),col="red");lines(density(mass.vg.8.j[,i]),col="blue");lines(density(mass.bm.8.j[,i]),col="green");legend("topright",col=c("black","red","blue","green"),lty=rep(1,4),c("JN","AS","VG","BM"));pause()}
+
+
+plotJumpTree = function(t, vals, colors=c("blue","grey","red"), numBreaks=10, breakFn=seq(0,1,len=numBreaks)) {
+
+	numBranches = length(edgeLength(t))-1
+	branchColors = 1:numBranches
+	ramp = colorRamp(colors)
+	inds = 1:(length(breakFn)-1)
+	col.breaks = (breakFn[inds]+breakFn[inds+1])/2
+	cols = rgb(ramp(col.breaks),max=255)
+
+	quant.vals = quantile(vals,breakFn, na.rm=T)
+	means = (quant.vals[inds]+quant.vals[inds+1])/2
+	tCol = rep("#BEBEBE",numBranches)
+	tWidth = 3# c()
+	
+	for (i in 1:numBranches)
+	{
+		tVal = vals[i]
+		which.color = max(which(quant.vals<=tVal))
+		if (which.color == numBreaks) {which.color=numBreaks-1}
+		tCol[i] = cols[which.color]
+		#tWidth[i] = (which.color)
+	}
+	#fakeT = t
+	#edgeLength(fakeT) = 1:numBranches
+	#fakeT = as(fakeT,"phylo")
+	#fakeT = reorder(fakeT,"pruningwise")
+	#indexPO = fakeT$edge.length
+	#t2 = reorder(as(t,"phylo"),"pruningwise")
+	#dev.new()
+	#plot.new()
+	t2 = as(t,"phylo")
+	plot(t2,edge.color=tCol,edge.width=3,cex=.5,no.margin=T,adj=0)
+	legend("topleft",legend=lapply(means,function(x){round(x,4)}),fill=cols,cex=.6)
+	return(list(quant = quant.vals, cols= cols,means=means,tCol=tCol))
+	
+}
+
+my.int = function(f,dx,a,b) {res = 0; x = a; while(x < b) {res = res + f(x)*dx; x = x + dx}; return(res) }
+
+L1_divergence = function(jumps,dx=.01,a=-10,b=10) {
+	cur_mean = mean(jumps);
+	cur_sd = sd(jumps);
+	cur_ecdf = ecdf(jumps);
+	return(my.int(function(x){abs(cur_ecdf(x)-pnorm(x,cur_mean,cur_sd))},dx,a,b))
+}
+
+signed_divergence = function(jumps,dx=.01,a=-10,b=10) {
+        cur_mean = mean(jumps);
+        cur_sd = sd(jumps);
+        cur_ecdf = ecdf(jumps);
+	
+}
+
+
+
+#pw_= levelplot(dw,colorkey=FALSE,col.regions=rgb(ramp(seq(0, 1, length = 1000)), max = 255),xlab="",ylab="",main=list(label=tw,cex=0.5),scales=list(draw=FALSE))

@@ -18,7 +18,8 @@ Expression::Expression(Settings* sp) {
 	tipStdDev = settingsPtr->getTipStdDev();
 
 	initializeTaxaNames();
-	initializeExprData();
+	initializeData();
+//	initializeExprData();
 
 	// print();
 
@@ -64,6 +65,53 @@ void Expression::initializeTaxaNames(void)
 		std::cout << "\tRead in " << numTaxa << " taxa.\n\n";
 
 }
+
+void Expression::initializeData(void)
+{
+	// so sick of these tables
+	Table* firstTable;
+	if (useCRP)
+	{
+		firstTable = new Table(NULL,-1); // TEST 05/05/11
+	}
+	else if (!useCRP)
+	{
+		firstTable = new Table(&tableList, 0);
+		tableList.push_back(firstTable);
+	}
+
+
+	if (settingsPtr->getPrintStdOut()) std::cout << "INITIALIZING: Data\n";
+
+	// read data from file
+	std::string exprFileName = settingsPtr->getInputDirPath() + settingsPtr->getExprFileName();
+	FileMgr* exprFile = new FileMgr(exprFileName);
+	std::ifstream exprStream;
+	if (exprFile->openFile(exprStream) == false)
+	{
+		std::cerr << "Cannot open file \"" + exprFile->getFileName() + "\"\n";
+		exit(1);
+	}
+
+	int exprCount = 0;
+	std::string exprLine = "";
+	while (exprStream.good())
+	{
+		std::getline(exprStream, exprLine);
+		if (exprLine != "\0")
+		{
+			data.push_back(atof(exprLine.c_str()));
+			exprCount++;
+			std::cout << "DATA: " << exprCount << ": " << exprLine << "\n";
+		}
+	}
+
+	numTaxa = exprCount;
+
+	if (settingsPtr->getPrintStdOut())
+		std::cout << "\tRead in " << numTaxa << " data.\n\n";
+}
+
 
 void Expression::initializeExprData(void)
 {
@@ -133,19 +181,9 @@ void Expression::initializeExprData(void)
 			exprLine >> field;
 			timeIndex = 0;
 
-			// gene name
-			if (exprLine.peek() == EOF && lineCount % (numTaxa + 1) == 0) // NOTE: +1 factor for geneName + numTaxa
-			{
-				taxaIndex = 0;
-				geneName = field;
-				tempValues.clear();
-				tempValues.resize(numTaxa);
-				//std::cout << "\t" << geneName << "\n";
-			}
 
-			// expression data
-			else
-			{
+			// data
+
 				tempValues[taxaIndex].push_back(atof(field.c_str()));
 				timeIndex++;
 				std::cout << "\t\t" << atof(field.c_str()) << "\n";
@@ -159,13 +197,10 @@ void Expression::initializeExprData(void)
 					// if all taxa have been read, instantiate a new Patron
 					if (taxaIndex == numTaxa)
 					{
-	//					patronList.push_back(new Patron(firstTable, tempValues, theta, numSteps, tipStdDev, geneName, transIndex));
 						transIndex++;
 						//std::cout << "\tADDED.\n";
 					}
 				}
-
-			}
 		}
 		lineCount++;
 	}

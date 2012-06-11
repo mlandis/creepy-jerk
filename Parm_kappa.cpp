@@ -86,7 +86,7 @@ double Kurtosis::change(double newK)
 double Kurtosis::lnProbability(void) {
 
 	//return -2.0 * log(1.0 + k);
-	double sig = 1;
+	double sig = 5;
 	return log(2 * sig) - log(sig * sig + k * k);
 	//return ranPtr->lnGammaPdf(3.0, (1.0/3.0), k);
 }

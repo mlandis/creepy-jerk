@@ -468,8 +468,10 @@ void Topology::buildTreeFromNewickString(Expression *ep, std::string &ts) {
 				double x = 0.0;
 				std::istringstream buf(*t);
 				buf >> x;
+				/*
 				if (x < 0.00001)
 					x = 0.0001;
+				*/
 				if (p->getFlag() == false)
 					p->setV(x);
 				else

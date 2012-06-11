@@ -269,6 +269,10 @@ void Mcmc::proposeParm(Parm* parm)
 	std::cout << "\tlnPriorRatio:\t\t" << lnPriorRatio << "\n";
 	std::cout << "\toldLnL:\t\t\t" << oldLnL << "\n";
 	std::cout << "\tnewLnL:\t\t\t" << newLnL << "\n";
+	std::cout << "\toldKb:\t\t\t" << oldKb << "\n";
+	std::cout << "\tnewKb:\t\t\t" << newKb << "\n";
+	std::cout << "\toldKj:\t\t\t" << oldKj << "\n";
+	std::cout << "\tnewKj:\t\t\t" << newKj << "\n";
 	std::cout << "\tlnLikeRatio:\t\t" << lnLikelihoodRatio << "\n";
 	std::cout << "\tMH Ratio:\t\t" << r << " (" << lnLikelihoodRatio + lnPriorRatio + lnProposalRatio << ")\n";
 	std::cout << "\tu:\t\t\t" << u << "\t\t\t" << "r:\t" << r << "\n";
@@ -418,7 +422,7 @@ void Mcmc::proposeChangeJump(void)
 				acceptState = true;
 			}
 
-		#if DEBUG_JUMP
+		#if DEBUG_PROPOSE_JUMP
 			std::cout << "\tlnProposalRatio:\t" << lnProposalRatio << "\n";
 			std::cout << "\tlnPriorRatio:\t\t" << lnPriorRatio << "\n";
 			std::cout << "\toldLnL:\t\t\t" << oldLnL << "\n";

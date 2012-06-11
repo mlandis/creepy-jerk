@@ -31,6 +31,7 @@ public:
 												~Expression();
 
 	void										initializeExprData(void);
+	void										initializeData(void);
 	void										initializeTaxaNames(void);
 
 	int											getNumTaxa(void)						{ return numTaxa; }

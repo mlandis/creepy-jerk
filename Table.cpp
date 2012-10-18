@@ -55,29 +55,27 @@ void Table::clone(const Table &t) {
 	parmVector.clear();
 	for (std::vector<Parm*>::const_iterator it_p = t.parmVector.begin(); it_p != t.parmVector.end(); it_p++)
 	{
-		Lambda* derivedPtrL = dynamic_cast<Lambda*> (*it_p);
+		Kappa* derivedPtrK = dynamic_cast<Kappa*> (*it_p);
 		Sigma* derivedPtrS = dynamic_cast<Sigma*> (*it_p);
-		if (derivedPtrL != 0)
+		Alpha* derivedPtrA = dynamic_cast<Alpha*> (*it_p);
+		if (derivedPtrK != 0)
 		{
-			parmVector.push_back(new Lambda(*derivedPtrL, derivedPtrL->getRandomPtr(), derivedPtrL->getName()));
-			//std::cout << "lambda: " << derivedPtrL->getActiveExpMean()->getRate() << "\n";
+			parmVector.push_back(new Kappa(*derivedPtrK, derivedPtrK->getRandomPtr(), derivedPtrK->getName()));
 		}
 		else if (derivedPtrS != 0)
 		{
 			parmVector.push_back(new Sigma(*derivedPtrS, derivedPtrS->getRandomPtr(), derivedPtrS->getName()));
-			//std::cout << "sigma: " << derivedPtrS->getActiveVar()->getRate() << "\n";
 		}
+		else if (derivedPtrA != 0)
+        {
+            parmVector.push_back(new Alpha(*derivedPtrA, derivedPtrA->getRandomPtr(), derivedPtrA->getName()));
+        }
 	}
 
 	branchVector.clear();
 	for (std::vector<Parm*>::const_iterator it_p = t.branchVector.begin(); it_p != t.branchVector.end(); it_p++)
 	{
-		Tau* derivedPtrT = dynamic_cast<Tau*> (*it_p);
-		if (derivedPtrT != 0)
-		{
-			branchVector.push_back(new Tau(*derivedPtrT, derivedPtrT->getRandomPtr(), derivedPtrT->getName()));
-			//std::cout << "tau: " << derivedPtrT->getActiveBrLen()->getRate() << "\n";
-		}
+
 	}
 
 	patronList = t.patronList;
@@ -90,27 +88,16 @@ Table::~Table(void) {
 
 	for (std::vector<Parm*>::iterator it_p = parmVector.begin(); it_p != parmVector.end(); it_p++)
 	{
-		Lambda* derivedPtrL = dynamic_cast<Lambda*> (*it_p);
+        Alpha* derivedPtrA = dynamic_cast<Alpha*> (*it_p);
+		Kappa* derivedPtrK = dynamic_cast<Kappa*> (*it_p);
 		Sigma* derivedPtrS = dynamic_cast<Sigma*> (*it_p);
-		if (derivedPtrL != 0)
-			delete derivedPtrL;
+		if (derivedPtrK != 0)
+			delete derivedPtrK;
 		else if (derivedPtrS != 0)
 			delete derivedPtrS;
+		else if (derivedPtrA != 0)
+		    delete derivedPtrA;
 	}
-
-	for (std::vector<Parm*>::iterator it_p = branchVector.begin(); it_p != branchVector.end(); it_p++)
-	{
-		Tau* derivedPtrT = dynamic_cast<Tau*> (*it_p);
-		if (derivedPtrT != 0)
-			delete derivedPtrT;
-	}
-
-
-	// Patrons deleted in Model destructor
-	// for (std::list<Patron*>::iterator it_p = patronList.begin(); it_p != patronList.end(); it_p++)
-	// {
-	// 	delete (*it_p);
-	// }
 }
 
 void Table::waitTable(void)

@@ -25,15 +25,12 @@
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_gamma.h>
 
-#include "CondLikes.h"
 #include "Expression.h"
 #include "MbRandom.h"
 #include "Parm.h"
 #include "Parm_alpha.h"
 #include "Parm_kappa.h"
-#include "Parm_lambda.h"
 #include "Parm_sigma.h"
-#include "Parm_tau.h"
 #include "Parm_tree.h"
 #include "Patron.h"
 #include "Settings.h"
@@ -48,7 +45,7 @@ class Settings;
 class Topology;
 
 
-// cf definitions
+// characteristic function definitions for GSL
 double poissonNormal(double k, void* params);
 double alphaStable(double k, void* params);
 double halfSkewNormal(double k, void* params);
@@ -101,18 +98,21 @@ private:
 	std::list<Patron*> patronList;
 	int tableId;
 
+	// model info
 	int numBranches;
 	int numNodes;
 	int numTaxa;
 	int numTranscripts;
 	int numTimepoints;
 
+	// model settings
+	int modelType;
 	double tuningBM;
 	bool useJumpKernel;
 	int evalType;
 	double sigmaJumpProposal;
-	bool printStdOut;
 
+	// Stepping stone marginal likelihood estimation
 	bool useSteppingStone;
 	double betaSteppingStone;
 
@@ -126,22 +126,12 @@ private:
 	double integralLength;
 	double integralError;
 
-	bool fixBranches;
-	int modelType;
-
+	// MH proposal probabilities
 	std::vector<double> proposalProbs;
 
+	// debugging tools
+	bool fixBranches;
+	bool printStdOut;
 };
 
 #endif /* MODEL_H_ */
-
-
-//	void								updateModel(void);
-//	void								updateAllFlags(void);
-//	void								updateAllFlags(int);
-//	BrLen*								getActiveBrLen(void);
-//	Var*								getActiveVar(void);
-//	ExpMean*							getActiveExpMean(void);
-//	Conc*								getActiveConc(void);
-//	Alpha*								getAlpha(void)						{ return alpha; }
-//	int									getTableId(void)					{ return ++tableId; }

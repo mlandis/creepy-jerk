@@ -19,10 +19,9 @@ Expression::Expression(Settings* sp) {
 
 	initializeTaxaNames();
 	initializeData();
-//	initializeExprData();
+	//initializeExprData();
 
 	// print();
-
 }
 
 Expression::~Expression(void)
@@ -72,7 +71,7 @@ void Expression::initializeData(void)
 	Table* firstTable;
 	if (useCRP)
 	{
-		firstTable = new Table(NULL,-1); // TEST 05/05/11
+		firstTable = new Table(NULL,-1);
 	}
 	else if (!useCRP)
 	{
@@ -132,7 +131,7 @@ void Expression::initializeExprData(void)
 	{
 		theta[i] = (((i + halfSteps) % numSteps) - halfSteps) * stepSize;
 	}
-*/
+	*/
 
 	// Prepare to assign Expression data to Patrons
 	std::vector<Patron*> patronVector;
@@ -184,23 +183,23 @@ void Expression::initializeExprData(void)
 
 			// data
 
-				tempValues[taxaIndex].push_back(atof(field.c_str()));
-				timeIndex++;
-				std::cout << "\t\t" << atof(field.c_str()) << "\n";
-				data.push_back(atof(field.c_str()));
+            tempValues[taxaIndex].push_back(atof(field.c_str()));
+            timeIndex++;
+            std::cout << "\t\t" << atof(field.c_str()) << "\n";
+            data.push_back(atof(field.c_str()));
 
-				// if there are no new timepoints, this taxon locus data has been read
-				if (exprLine.peek() == EOF)
-				{
-					taxaIndex++;
+            // if there are no new timepoints, this taxon locus data has been read
+            if (exprLine.peek() == EOF)
+            {
+                taxaIndex++;
 
-					// if all taxa have been read, instantiate a new Patron
-					if (taxaIndex == numTaxa)
-					{
-						transIndex++;
-						//std::cout << "\tADDED.\n";
-					}
-				}
+                // if all taxa have been read, instantiate a new Patron
+                if (taxaIndex == numTaxa)
+                {
+                    transIndex++;
+                    //std::cout << "\tADDED.\n";
+                }
+            }
 		}
 		lineCount++;
 	}

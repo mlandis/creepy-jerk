@@ -10,7 +10,6 @@
 
 #include "Expression.h"
 #include "FileMgr.h"
-#include "MbBitfield.h" // Don't need? 06/01/11
 #include "MbRandom.h"
 #include "Parm.h"
 
@@ -165,8 +164,6 @@ public:
 	void			decrementNumJumps(void)				{ numJumps--; }
 
 	void			setBranchRatios(void);
-	//double			proposeAddJump(double lambda, double sigma, int space);
-	//double			proposeRemoveJump(double lambda, double sigma, int space);
 	void			copyNodeSpaces(int i, int j);
 
 	double			lnProbability(void);
@@ -177,10 +174,6 @@ public:
 	void			flipAllActiveCls(void);
 	void			flipAllActiveTis(void);
 	void			flipAllActiveParms(void);
-	//void			copyInactiveJumpsToActiveJumps(void);
-	//void			initializeTaxonBipartitions(void);
-	//void			getTaxonBipartitions(void);
-	//void			printTaxonBipartitions(void);
 	void			printJumpSamples(int space);
 	void			printJumpSummary(void);
 	void			printJumpSizes(int space);

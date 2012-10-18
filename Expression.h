@@ -11,6 +11,7 @@
 #include "FileMgr.h"
 #include "Patron.h"
 #include "Settings.h"
+#include "Table.h"
 
 #include <algorithm>
 #include <dirent.h>
@@ -23,6 +24,7 @@
 class FileMgr;
 class Patron;
 class Settings;
+class Table;
 
 class Expression {
 

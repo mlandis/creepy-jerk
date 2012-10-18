@@ -26,8 +26,8 @@ Settings::Settings(int argc, char** argv)
 	// Default initialization for Settings
 
 	// Model settings
-	seed = 53;
-	modelType = 4;
+	seed = 52;
+	modelType = 3;
 	fixBranches = true;
 	tuningBM = 0.9995;
 	useJumpKernel = true;
@@ -40,7 +40,7 @@ Settings::Settings(int argc, char** argv)
 	betaSteppingStone = 1.000000;
 	printStdOut = true;
 
-	// FFT settings
+	// FFT settings -- currently unused
 	useFFT = false;
 	tipStdDev = 0.001;
 	numSteps = pow(2, 16);	// 2^19 is the upper limit
@@ -48,7 +48,7 @@ Settings::Settings(int argc, char** argv)
 	finalStep = 10000.0;	//300.0;
 
 	// MCMC settings
-	numCycles = pow(10,6)*2;
+	numCycles = pow(10,1)*2;
 	printFreqMH = 1;
 	printFreqJump = printFreqMH;
 	printFreqStdOut = printFreqMH;
@@ -62,7 +62,7 @@ Settings::Settings(int argc, char** argv)
 	bCRP = 1.0;
 	useCRP = false;
 
-	// GSL
+	// GSL settings (NOTE: different models are numerically unstable for different GSL settings)
 	workspaceSize = 30;
 	integralLength = 5000.0;
 	trigTableSize = 50;
@@ -73,30 +73,19 @@ Settings::Settings(int argc, char** argv)
 	outputDirPath = "/Users/mlandis/data/expr_phylo/output/";
 	outputFileName = "";
 
-	simName = "isler." + Util::getTime();
+
+	simName = "cj." + Util::getTime();
 	exprFileName = simName + ".data.txt";
 	treeFileName = simName + ".tree.txt";
 	taxaFileName = simName + ".taxa.txt";
 
 
-	simName = "gogo";
+	simName = "gogo2";
 	taxaFileName = "primates.eastman.isler_pruned.taxa.txt";
 	treeFileName = "primates.eastman.isler_pruned.tree.txt";
 	exprFileName = "primates.eastman.isler_pruned.mass.data.txt";
-	//exprFileName = "primates.eastman.isler_pruned.ecv.data.txt";
-	//exprFileName = "primates.eastman.isler_pruned.massecvratio.data.txt";
 
 
-/*
-
-	taxaFileName = "taxa.txt";
-	treeFileName = "tree.txt";
-	exprFileName = "isler.pruned.VG.Sig.BM_.05_Kap.VG_9_Sig.VG_.1_1.data.txt";
-
-	taxaFileName = "series.taxa.txt";
-	treeFileName = "series.tree.txt";
-	exprFileName = "series.VG_Sig.BM_.05_Kap.VG_100_Sigma.VG_.1_9.data.txt";
-*/
 	// Assign settings arguments
 	setArguments(argc, argv);
 

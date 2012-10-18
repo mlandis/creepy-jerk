@@ -105,11 +105,9 @@ void Stability::clone(const Stability &t) {
 
 	ranPtr = t.ranPtr;
 	parmName = t.parmName;
-//	treePtr = t.treePtr;
 	k = t.k;
 }
 
-//Alpha::Alpha(MbRandom* rp, Tree* tp, std::string pn) : Parm(rp, pn) {
 Alpha::Alpha(MbRandom* rp, std::string pn) : Parm(rp, pn) {
 
 	//stability[0] = new Stability(rp, tp);

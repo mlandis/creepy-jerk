@@ -8,63 +8,65 @@ auto_cor =	function(	data,
 
 plotMcmc = 	function(	fn,
 				b = 100,
-				trueparm,
+				trueparm = c(0.5, 1.2, 0.9),
 				plot_auto = F,
-				max_lag = 50,
-				other_func = F,
-				func_name = "",
-				func,
-				...
+				max_lag = 50
 			)
 {
-	
 	x = read.table(fn, header=T)
 	xx = x[b:nrow(x),]
 	dev.new()
-	parm_names = colnames(xx)[5:ncol(xx)]
-	num_plots = length(parm_names)
-	
-	if (other_func) 
-	{
-		num_plots = num_plots + 1
-	}
 	if (plot_auto)
 	{
-		par(mfrow=c(num_lots,4),oma=c(0,0,2,0))
+		par(mfrow=c(4,4),oma=c(0,0,2,0))
 	}
 	else
 	{
-		par(mfrow=c(num_plots,3),oma=c(0,0,2,0))
+		par(mfrow=c(4,3),oma=c(0,0,2,0))
 	}
 	
-	for (i in 1:length(parm_names)) {
-		plot(density(xx[,4+i]),xlab=parm_names[i],main="Posterior")
-		abline(v=trueparm[i])
-		plot(xx[,4+i],xx$lnL,xlab=parm_names[i],ylab="lnL",main="Likelihood")
-		plot(xx[,4+i],type="l",ylab=parm_names[i],main="Trace")
-		if (plot_auto)
-		{
-			auto = sapply(1:max_lag,function(i) {auto_cor(xx[,4+i],i)})
-			plot(auto,ylab="autocorrelation",main="Autocorrelation")	
-		}
-	}
-	
-	if (other_func)
+	plot(density(xx$Sig.BM,from=0.0))
+	abline(v=trueparm[1])
+	plot(xx$Sig.BM, xx$lnL)
+	plot(xx$Sig.BM,type="l")
+	if (plot_auto)
 	{
-		plot(density(func(xx,...)),xlab=func_name,main="Posterior")
-		#abline(v=func(trueparm,...))
-		plot(func(xx,...),xx$lnL,xlab=func_name,ylab="lnL",main="Likelihood")
-		plot(func(xx,...),type="l",ylab=func_name,main="Trace")
-		if (plot_auto)
-		{
-			auto = sapply(1:max_lag,function(i) {auto_cor(func(xx,...),i)})
-			plot(auto,ylab="autocorrelation",main="Autocorrelation")
-		}
+		auto = sapply(1:max_lag,function(i) { auto_cor(xx$Sig.BM,i) })
+		plot(auto)	
+	}
+
+	plot(density(xx$Lam.JN,from=0.0))
+	abline(v=trueparm[2])
+	plot(xx$Lam.JN, xx$lnL)
+	plot(xx$Lam.JN,type="l")
+	if (plot_auto)
+	{
+		auto = sapply(1:max_lag,function(i) { auto_cor(xx$Lam.JN,i) })
+		plot(auto)
 	}
 	
-	
-#	titleName = paste("SigBM=", trueparm[1], ", LamJN=", trueparm[2], ", SigJN=", trueparm[3], sep="")
-#	title(main=titleName, outer=T)
+	plot(density(xx$Sig.JN,from=0.0))
+	abline(v=trueparm[3])
+	plot(xx$Sig.JN, xx$lnL)
+	plot(xx$Sig.JN,type="l")
+	if (plot_auto)
+	{
+		auto = sapply(1:max_lag, function(i) { auto_cor(xx$Sig.JN,i) })
+		plot(auto)
+	}	
+
+	plot(density(xx$Sig.BM^2 + xx$Lam.JN*xx$Sig.JN^2, from=0.0))
+	abline(v=trueparm[1]^2 + trueparm[2]*trueparm[3]^2)
+	plot(xx$Sig.BM^2 + xx$Lam.JN*xx$Sig.JN^2, xx$lnL)
+	plot(xx$Sig.BM^2 + xx$Lam.JN*xx$Sig.JN^2,type="l")
+	if (plot_auto)
+	{
+		auto = sapply(1:max_lag, function(i) { auto_cor(xx$Sig.BM^2 + xx$Lam.JN*xx$Sig.JN^2,i) })
+		plot(auto)
+	}
+		
+	titleName = paste("SigBM=", trueparm[1], ", LamJN=", trueparm[2], ", SigJN=", trueparm[3], sep="")
+	title(main=titleName, outer=T)
 	
 #	dev.new()
 #	plot(xx$lnL)

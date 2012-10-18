@@ -22,7 +22,6 @@ Node::Node(void) {
 	updateCl	= false;
 	updateTi	= false;
 	flag		= false;
-//	part		= new MbBitfield;
 
 	// node values
 	activeParm = 0;
@@ -1047,32 +1046,8 @@ void Topology::printJumpSummary(void) {
 		}
 	}
 
-
-	// mean
-	//meanJumpSize = sumJumpSize / sumJumpCount;
-
-	// var
-
 	std::cout << "n " << sumJumpCount << "\tpr_n " << sumLnProbJumpCount << "\tx " << sumJumpSize << "\tpr_x " << lnProbSumJumpSize << "\n";
 }
-
-/*
-void Topology::copyInactiveJumpsToActiveJumps(void)
-{
-	for (int n = 0; n < numNodes; n++)
-	{
-		Node* p = &nodes[n];
-		int activeParm = p->getActiveParm();
-		int inactiveParm = (activeParm == 0 ? 1 : 0);
-
-		p->setJumpCount(p->getJumpCount(inactiveParm), space);
-		p->setJumpSize(p->getJumpSize(inactiveParm), space);
-		p->setLnProbJumpCount(p->getLnProbJumpCount(inactiveParm), space);
-		p->setSumJumpSize(p->getSumJumpSize(inactiveParm), space);
-		p->setSumLnProbJumpSize(p->getSumLnProbJumpSize(inactiveParm), space);
-	}
-}
-*/
 
 Tree::Tree(MbRandom *rp, std::string pn, Expression *ep, double vp) : Parm(rp, pn) {
 

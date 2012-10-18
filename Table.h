@@ -16,17 +16,17 @@
 #include <sstream>
 #include <vector>
 
-#include "Parm_lambda.h"
 #include "Parm_sigma.h"
-#include "Parm_tau.h"
+#include "Parm_alpha.h"
+#include "Parm_kappa.h"
 #include "Parm.h"
 #include "Patron.h"
 
 class Patron;
 class Parm;
-class Tau;
-class Lambda;
 class Sigma;
+class Alpha;
+class Kappa;
 
 class Table {
 

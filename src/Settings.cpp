@@ -60,7 +60,7 @@ Settings::Settings(int argc, char** argv)
 
 	// MCMC settings
 	numCycles = pow(10,1)*2;
-	printFreqMH = 1;
+	printFreqMH = 1000;
 	printFreqJump = printFreqMH;
 	printFreqStdOut = printFreqMH;
 	printFreqCRP = printFreqMH;

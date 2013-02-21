@@ -19,7 +19,7 @@ Michael, Josh, and Mason
 
 # Going wild
 - The command-line syntax is as follows: <code>./creepy-jerk -flag_name1=flag_value1 -flag_name2=flag_value2 ... </code>. If a flag is not called, the application runs under the default values given below.
-- Example command-line string: ```./creepy-jerk -seed=1 -modelType=3 -simName=example -printStdOut=True -printFreqStdOut=1000 -printFreqJump=1000 -printFreqMH=1000 -numCycles=2000000 -outputFilePath=./ -inputFilePath=./ -dataFileName=primates.mass.data.txt -taxaFileName=primates.taxa.txt -treeFileName=primates.tree.txt</code>```
+- Example command-line string: ```./creepy-jerk -modelType=3 -simName=example -printStdOut=True -printFreqStdOut=1000 -printFreqJump=1000 -printFreqMH=1000 -numCycles=2000000 -outputFilePath=./ -inputFilePath=./ -dataFileName=data.txt -taxaFileName=taxa.txt -treeFileName=tree.txt</code>```
 
 ####MCMC/Model settings
 
@@ -41,7 +41,7 @@ MCMC per-branch jump size sample frequency, indexed by branch's immediately desc
 
 *seed*
 
-Random number generator seed (default: 1)
+Random number generator seed (default: system time, i.e. effectively random)
 
 *sigmaJumpProposal*
 

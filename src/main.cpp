@@ -30,7 +30,11 @@ int main(int argc, char *argv[])
 
 	Settings* mySettings = new Settings(argc, argv);
 
-	MbRandom* myRandom = new MbRandom(mySettings->getSeed());
+	MbRandom* myRandom;
+    if (mySettings->getSeed() < 0)
+        myRandom = new MbRandom();
+    else
+        myRandom = new MbRandom(mySettings->getSeed());
 
 	Expression* myExpression = new Expression(mySettings);
 

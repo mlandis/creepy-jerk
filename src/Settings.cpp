@@ -27,7 +27,7 @@ Settings::Settings(int argc, char** argv)
 	// Default initialization for Settings
 
 	// Model settings
-	seed = 1;
+	seed = -1;
 	modelType = 3;
 	fixBranches = true;
 	tuningBM = 0.9995;

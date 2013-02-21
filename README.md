@@ -1,3 +1,11 @@
+# Hello
+We were not expecting such interest in the model, so we whipped together this guide for questions received thus far. We'll release an official manual shortly. Please feel welcome to email us with questions about the method or the model.
+
+Our best,
+Michael Landis
+Joshua Schraiber
+Mason Liang
+
 # Installation
 1. From the command line, navigate into the <code>src</code> folder.
 2. Before compiling, verify you have the GNU Scientific Library (GSL) installed. For Mac OS X, you can install GSL using <a>HomeBrew</a url="dsadisa"> as follows: <code>brew install gsl</code>. For Ubuntu, you can install GSL as follows: <code>apt-get install libgsl0-dev</code>. Advice for how to accomplish this on Windows is welcome.

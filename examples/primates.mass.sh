@@ -1,0 +1,1 @@
+./levy -seed=1 -modelType=3 -simName=example -printStdOut=True -printFreqStdOut=1000 -printFreqJump=1000 -printFreqMH=1000 -numCycles=2000000 -useSteppingStone=False -tuningBM=0.9995 -outputFilePath=./ -inputFilePath=./ -dataFileName=primates.mass.data.txt -taxaFileName=primates.taxa.txt -treeFileName=primates.tree.txt

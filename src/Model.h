@@ -112,6 +112,16 @@ private:
 	int evalType;
 	double sigmaJumpProposal;
 
+	// model shifting
+	bool useModelShift;
+	std::vector<int> modelShiftList;
+	std::vector<double> modelShiftRates;
+
+	// rate shifting
+	bool useRateShift;
+	std::vector<int> rateShiftList;
+	std::vector<double> rateShiftRates;
+
 	// Stepping stone marginal likelihood estimation
 	bool useSteppingStone;
 	double betaSteppingStone;

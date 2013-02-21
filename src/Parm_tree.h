@@ -8,6 +8,7 @@
 #ifndef PARM_TREE_H_
 #define PARM_TREE_H_
 
+#include "BranchHistory.h"
 #include "Expression.h"
 #include "FileMgr.h"
 #include "MbRandom.h"
@@ -116,7 +117,8 @@ private:
 	bool					updateCl;
 	bool					updateTi;
 	bool					flag;
-//	MbBitfield*				part;
+
+
 
 	// sampling (non-FFT) jump diffusion
 	int						activeParm;

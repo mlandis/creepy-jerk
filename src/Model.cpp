@@ -175,6 +175,8 @@ Model::Model(Expression* ep, MbRandom* rp, Settings* sp, Topology* tp)
 	sigmaJumpProposal = settingsPtr->getSigmaJumpProposal();
 	printStdOut = settingsPtr->getPrintStdOut();
 
+	modelShiftList = settingsPtr->getModelShiftList();
+
 	useSteppingStone = settingsPtr->getUseSteppingStone();
 	betaSteppingStone = settingsPtr->getBetaSteppingStone();
 

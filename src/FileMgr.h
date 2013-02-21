@@ -14,6 +14,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string>
+#include <unistd.h>
 
 class FileMgr {
 public:

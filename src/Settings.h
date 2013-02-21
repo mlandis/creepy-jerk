@@ -47,6 +47,12 @@ public:
 	bool		getUseJumpKernel(void)			{ return useJumpKernel; }
 	double		getSigmaJumpProposal(void)		{ return sigmaJumpProposal; }
 
+	bool        getUseModelShift(void)          { return useModelShift; }
+	std::vector<int> getModelShiftList(void)    { return modelShiftList; }
+
+	bool        getUseRateShift(void)           { return useRateShift; }
+	std::vector<int> getRateShiftList(void)     { return rateShiftList; }
+
 	bool		getUseSteppingStone(void)		{ return useSteppingStone; }
 	double		getBetaSteppingStone(void)		{ return betaSteppingStone; }
 
@@ -95,7 +101,6 @@ private:
 	std::string outputFileName;
 	std::string simName;
 
-
 	// Model
 	int seed;
 	int modelType;
@@ -103,6 +108,14 @@ private:
 	double tuningBM;
 	bool useJumpKernel;
 	double sigmaJumpProposal;
+
+    // Model shifting
+    bool useModelShift;
+    std::vector<int> modelShiftList;
+
+    // Rate shifting
+    bool useRateShift;
+    std::vector<int> rateShiftList;
 
 	// Stepping Stone
 	bool useSteppingStone;

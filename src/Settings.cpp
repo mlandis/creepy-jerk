@@ -18,6 +18,7 @@
 #define BM_JUMP_PDF 7
 #define DBL_EXP_NUMINT 8
 #define SKEW_NORMAL_NUMINT 9
+#define OU_NUMINT 10
 
 
 Settings::Settings(int argc, char** argv)
@@ -26,7 +27,7 @@ Settings::Settings(int argc, char** argv)
 	// Default initialization for Settings
 
 	// Model settings
-	seed = 52;
+	seed = 1;
 	modelType = 3;
 	fixBranches = true;
 	tuningBM = 0.9995;
@@ -35,9 +36,19 @@ Settings::Settings(int argc, char** argv)
 		useJumpKernel = false;
 	sigmaJumpProposal = 1.0;
 
+    // Model switching
+    useModelShift = false;
+    modelShiftList.push_back(5);
+    modelShiftList.push_back(10);
+
+    // Rate switching
+    useRateShift = false;
+    rateShiftList.push_back(1);
+    rateShiftList.push_back(1);
+
 	// Stepping Stone settings
 	useSteppingStone = false;
-	betaSteppingStone = 1.000000;
+	betaSteppingStone = 1.0;
 	printStdOut = true;
 
 	// FFT settings -- currently unused
@@ -69,21 +80,26 @@ Settings::Settings(int argc, char** argv)
 	integralError = 1e-6;
 
 	// File names
-	inputDirPath = "/Users/mlandis/data/expr_phylo/input/";
-	outputDirPath = "/Users/mlandis/data/expr_phylo/output/";
+    inputDirPath = "";
+    outputDirPath = "";
 	outputFileName = "";
 
+    exprFileName = "";
+    treeFileName = "";
+    taxaFileName = "";
+    
+    //inputDirPath = "/Users/mlandis/data/expr_phylo/input/";
+	//outputDirPath = "/Users/mlandis/data/expr_phylo/output/";
 
 	simName = "cj." + Util::getTime();
-	exprFileName = simName + ".data.txt";
-	treeFileName = simName + ".tree.txt";
-	taxaFileName = simName + ".taxa.txt";
+	exprFileName = ""; //simName + ".data.txt";
+	treeFileName = ""; //simName + ".tree.txt";
+	taxaFileName = ""; //simName + ".taxa.txt";
 
-
-	simName = "gogo2";
-	taxaFileName = "primates.eastman.isler_pruned.taxa.txt";
-	treeFileName = "primates.eastman.isler_pruned.tree.txt";
-	exprFileName = "primates.eastman.isler_pruned.mass.data.txt";
+	//simName = "default";
+	//taxaFileName = "primates.eastman.isler_pruned.taxa.txt";
+	//treeFileName = "primates.eastman.isler_pruned.tree.txt";
+	//exprFileName = "primates.eastman.isler_pruned.mass.data.txt";
 
 
 	// Assign settings arguments
@@ -103,7 +119,6 @@ Settings::Settings(int argc, char** argv)
 		outputFileName = simName + ss.str() + "." + exprFileName;
 	}
 
-	//if (printStdOut)
 	print();
 }
 
@@ -150,7 +165,7 @@ void Settings::setArguments(int argc, char** argv)
 			inputDirPath = argVal;
 		else if (argName == "-settingsFilePath")
 			settingsFilePath = argVal;
-		else if (argName == "-exprFileName")
+		else if (argName == "-dataFileName" || argName == "-exprFileName")
 			exprFileName = argVal;
 		else if (argName == "-treeFileName")
 			treeFileName = argVal;
@@ -217,7 +232,7 @@ void Settings::print(void)
 
 	std::cout << "\tInput\n";
 	std::cout << "\t\tinputDirPath      = " << inputDirPath << "\n";
-	std::cout << "\t\texprFileName      = " << exprFileName << "\n";
+	std::cout << "\t\tdataFileName      = " << exprFileName << "\n";
 	std::cout << "\t\ttreeFileName      = " << treeFileName << "\n";
 	std::cout << "\t\ttaxaFileName      = " << taxaFileName << "\n";
 	std::cout << "\t\tsettingsFilePath  = " << settingsFilePath << "\n";

@@ -580,7 +580,7 @@ void Mcmc::printChainState(int n, double lnL) {
 			}
 		}
 
-		parmFileStrm << "Cycle\tlnL\tkb\tkj\tkurt\t" << pHeaderStr << std::endl;
+		parmFileStrm << "Cycle\tlnL\tlnB\tlnJ\tkurt\t" << pHeaderStr << std::endl;
 	}
 
 	std::string pStr = "";

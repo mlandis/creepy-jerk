@@ -88,7 +88,7 @@ Console print frequency (default: 1000)
 Example:
 
 <code>
-Cycle   lnL kb  kj  kurt    sigma-JN    lambda-JN   delta-JN    
+Cycle   lnL lnB lnJ kurt    sigma-JN    lambda-JN   delta-JN    
 0   -1247.85        -282.907    -964.947    0.00214928  0.833718    0.681736    0.165492    
 1000    53.90       -64.6927    118.596 0.0175666   0.134847    1.014156    0.116552    
 2000    108.73      -34.529 143.256 0.0406107   0.108665    0.785622    0.150189    
@@ -102,13 +102,13 @@ The MCMC sample's discrete time index
 
 *lnL*
 
-The full model log likelihood (i.e. the pure-diffusion model log likelihood + the pure-jump model log likelihood)
+The full model log likelihood (i.e. lnL = lnB + lnJ, see below)
 
-*kb*
+*lnB*
 
 The pure-diffusion model log likelihood
 
-*kj*
+*lnJ*
 
 The pure-jump model log likelihood
 

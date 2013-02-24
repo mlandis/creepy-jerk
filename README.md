@@ -81,9 +81,18 @@ Enable printing of MCMC parameter state to console (default: true)
 
 Console print frequency (default: 1000)
 
-# OUTPUT
+# Output files
 
 ####*.parameters.txt
+
+Example:
+
+<code>
+Cycle   lnL kb  kj  kurt    sigma-JN    lambda-JN   delta-JN    
+0   -1247.85        -282.907    -964.947    0.00214928  0.833718    0.681736    0.165492    
+1000    53.90       -64.6927    118.596 0.0175666   0.134847    1.014156    0.116552    
+2000    108.73      -34.529 143.256 0.0406107   0.108665    0.785622    0.150189    
+</code>
 
 The parameters file contains the MCMC chain states sampled at the interval defined by *printFreqMH*. All fields are tab-delimited, with each column corresponding to a state variable, with those states being (in order):
 

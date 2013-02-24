@@ -93,7 +93,7 @@ Example:
 2000    108.73      -34.529 143.256 0.0406107   0.108665    0.785622    0.150189    
 </code>
 
-The parameters file contains the MCMC chain states sampled at the interval defined by *printFreqMH*. All fields are tab-delimited, with each column corresponding to a state variable, with those states being (in order):
+To interpret your MCMC posterior, we recommend using <a href="http://tree.bio.ed.ac.uk/software/tracer/">Tracer</a>. The parameters file contains the MCMC chain states sampled at the interval defined by *printFreqMH*. All fields are tab-delimited, with each column corresponding to a state variable, with those states being (in order):
 
 *Cycle*
 
@@ -119,7 +119,6 @@ The positive excess kurtosis per unit time, which is a function of the *modelTyp
 
 The model parameters, where sigma-modelType is the Brownian motion component rate parameter, and the remaining parameters (if any) are the jump component parameters
 
-To interpret your MCMC posterior, we recommend using <a href="http://tree.bio.ed.ac.uk/software/tracer/">Tracer</a>.
 
 
 ####*output_filename*.jumps.txt

@@ -1,5 +1,5 @@
 # Hello
-Interested in modeling continuous trait evolution on a phylogeny as a Lévy process? This git repository contains the most recent source code for method we described in Systematic Biology, found <a href="http://sysbio.oxfordjournals.org/content/62/2/193.full">here</a>. We whipped together this guide to respond to questions received thus far and plan to release an official manual once we've collected feedback from users. Please feel welcome to email us with questions about the method or the model.
+Interested in modeling continuous trait evolution on a phylogeny as a Lévy process? This git repository contains the most recent source code for the method we described in Systematic Biology, found <a href="http://sysbio.oxfordjournals.org/content/62/2/193.full">here</a>. We whipped together this guide to respond to questions received thus far and plan to release an official manual once we've collected feedback from users. Please feel welcome to email us with questions about the method or the model.
 
 Our best,
 
@@ -80,3 +80,38 @@ Enable printing of MCMC parameter state to console (default: true)
 *printFreqStdOut*
 
 Console print frequency (default: 1000)
+
+# OUTPUT
+
+####*.parameters.txt
+
+The parameters file contains the MCMC chain states sampled at the interval defined by *printFreqMH*. All fields are tab-delimited, with each column corresponding to a state variable, with those states being (in order):
+
+*Cycle*
+
+The MCMC sample's discrete time index
+
+*lnL*
+
+The full model log likelihood (i.e. the pure-diffusion model log likelihood + the pure-jump model log likelihood)
+
+*kb*
+
+The pure-diffusion model log likelihood
+
+*kj*
+
+The pure-jump model log likelihood
+
+*kurt*
+
+The positive excess kurtosis per unit time, which is a function of the *modelType* variable
+
+*parameterName-modelType*
+
+The model parameters, where sigma-modelType is the Brownian motion component rate parameter, and the remaining parameters (if any) are the jump component parameters
+
+
+####*.jumps.txt
+
+(coming soon)

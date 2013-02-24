@@ -78,7 +78,7 @@ public:
 	double								driftOnlyLnLikelihood(Node* p, const std::vector<Parm*>&, int space);
 	double 								proposeJumpSize(Node* p, const std::vector<Parm*>&, int space);
 	void								updateGSL(void);
-
+    double                              getPositiveExcessKurtosisPerUnitTime(void);
 
 
 private:

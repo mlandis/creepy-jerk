@@ -539,8 +539,8 @@ void Mcmc::proposeRidgeMove(void)
 void Mcmc::openFiles(std::string fn) {
 
 	std::string tf = fn + ".t";
-	std::string pf = fn + ".p";
-	std::string jf = fn + ".j";
+	std::string pf = fn + ".parameters.txt";
+	std::string jf = fn + ".jumps.txt";
 	std::string patronFile = fn + ".patron";
 	std::string tableFile = fn + ".table";
 
@@ -580,12 +580,13 @@ void Mcmc::printChainState(int n, double lnL) {
 			}
 		}
 
-		parmFileStrm << "Cycle\tlnL\tkb\tkj\t" << pHeaderStr << std::endl;
+		parmFileStrm << "Cycle\tlnL\tkb\tkj\tkurt\t" << pHeaderStr << std::endl;
 	}
 
 	std::string pStr = "";
 	pStr += "\t" + printDouble(oldKb);
 	pStr += "\t" + printDouble(oldKj);
+    pStr += "\t" + printDouble(modelPtr->getPositiveExcessKurtosisPerUnitTime());
 	pStr += "\t";
 
 	for (std::list<Table*>::iterator it_t = tableListPtr->begin(); it_t != tableListPtr->end(); it_t++)

@@ -210,9 +210,9 @@ void Model::initializeParms(void)
 	}
 	else if (modelType == ALPHA_STABLE_NUMINT) // NumInt Alpha-stable + BM
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-		initialParms.push_back(new Alpha(randomPtr, "Alf-AS"));
-		initialParms.push_back(new Sigma(randomPtr, "Cee-AS"));
+		initialParms.push_back(new Sigma(randomPtr, "sigma-AS"));
+		initialParms.push_back(new Alpha(randomPtr, "alpha-AS"));
+		initialParms.push_back(new Sigma(randomPtr, "beta-AS"));
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
@@ -224,9 +224,9 @@ void Model::initializeParms(void)
 	}
 	else if (modelType == JUMP_NORM_NUMINT) // NumInt Poisson-Normal + BM
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "sigma-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "lambda-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "delta-JN"));
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
@@ -237,9 +237,9 @@ void Model::initializeParms(void)
 	}
 	else if (modelType == JUMP_NORM_PDF) // Pdf Sampled Poisson-Normal + BM
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-		initialParms.push_back(new Sigma(randomPtr, "Lam-JN"));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "sigma-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "lambda-JN"));
+		initialParms.push_back(new Sigma(randomPtr, "delta-JN"));
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
@@ -249,9 +249,9 @@ void Model::initializeParms(void)
 	}
 	else if (modelType == VAR_GAMMA_BESSEL) // Bessel Variance Gamma
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-		initialParms.push_back(new Kappa(randomPtr, "Kap-VG"));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "sigma-VG"));
+		initialParms.push_back(new Kappa(randomPtr, "kappa-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "tau-VG"));
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
@@ -261,15 +261,15 @@ void Model::initializeParms(void)
 	}
 	else if (modelType == BM_ONLY) // Brownian motion only
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "sigma-BM"));
 		proposalProbs.push_back(1.0);
 		useJumpKernel = false;
 	}
 	else if (modelType == VAR_GAMMA_NUMINT) // NumInt Variance Gamma
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
-		initialParms.push_back(new Sigma(randomPtr, "Kap-VG"));
-		initialParms.push_back(new Sigma(randomPtr, "Sig-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "sigma-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "kappa-VG"));
+		initialParms.push_back(new Sigma(randomPtr, "tau-VG"));
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
 		proposalProbs.push_back(1.0);
@@ -279,7 +279,7 @@ void Model::initializeParms(void)
 	}
 	else if (modelType == BM_JUMP_PDF) // Pdf Brownian motion (w/ fake jump)
 	{
-		initialParms.push_back(new Sigma(randomPtr, "Sig-BM"));
+		initialParms.push_back(new Sigma(randomPtr, "sigma-BM"));
 		proposalProbs.push_back(1.0);
 		useJumpKernel = true;
 		evalType = PDF;
@@ -867,6 +867,68 @@ double Model::driftLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, i
 
 //	}
 	return lnL;
+}
+
+double Model::getPositiveExcessKurtosisPerUnitTime(void)
+{
+    Table* t = tableList.front();
+    std::vector<Parm*> p = t->getParmVector();
+    double ret = 0.0;
+
+    if (modelType == NORM_INV_GAUSS_BESSEL)
+    {
+        ;
+    }
+    else if (modelType == ALPHA_STABLE_NUMINT)
+    {
+        ret = -1.0;
+    }
+    else if (modelType == JUMP_NORM_NUMINT)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = (3 * p1 * pow(p2,4)) / (p0*p0 + p1*p2*p2);
+    }
+    else if (modelType == JUMP_NORM_PDF)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = (3 * p1 * pow(p2,4)) / (p0*p0 + p1*p2*p2);
+    }
+    else if (modelType == VAR_GAMMA_BESSEL)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = (3 * p1 * pow(p2,4)) / (p0*p0 + p2*p2);
+
+    }
+    else if (modelType == BM_ONLY)
+    {
+        ;
+    }
+    else if (modelType == VAR_GAMMA_NUMINT)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = (3 * p1 * pow(p2,4)) / (p0*p0 + p2*p2);
+    }
+    else if (modelType == BM_JUMP_PDF)
+    {
+        ;
+    }
+    else if (modelType == DBL_EXP_NUMINT)
+    {
+        ;
+    }
+    else if (modelType == SKEW_NORMAL_NUMINT)
+    {
+        ;
+    }
+    return ret;
 }
 
 Parm* Model::pickParmAtRandom(Table* t)

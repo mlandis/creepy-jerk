@@ -159,7 +159,7 @@ void Mcmc::runChain()
 
 		if (n % printFreqJump == 0)
 		{
-			printChainJumps(n);
+			printChainJumpsAsNhx(n);
 		}
 
 		if (n > burnIn)
@@ -638,6 +638,16 @@ void Mcmc::printChainJumps(int n)
 	}
 
 	jumpFileStrm << n << jStr << std::endl;
+}
+
+void Mcmc::printChainJumpsAsNhx(int n)
+{
+	if (n == 0)
+	{
+		jumpFileStrm << "Cycle\tnhxString" << std::endl;
+	}
+    
+	jumpFileStrm << n << "\t" << topologyPtr->getNhxString() << std::endl;
 }
 
 

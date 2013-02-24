@@ -181,6 +181,9 @@ public:
 	void			printJumpSizes(int space);
 	void			markPathDownFromNode(Node* p);
 
+    std::string     addNodeNhxToString(Node* p, std::string s);
+    std::string     getNhxString(void);
+    
 private:
 	void			buildRandomTree(Expression *ep);
 	void			buildTreeFromNewickString(Expression *ep, std::string &ts);

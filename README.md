@@ -83,7 +83,7 @@ Console print frequency (default: 1000)
 
 # Output files
 
-####*.parameters.txt
+####*output_filename*.parameters.txt
 
 Example:
 
@@ -119,7 +119,20 @@ The positive excess kurtosis per unit time, which is a function of the *modelTyp
 
 The model parameters, where sigma-modelType is the Brownian motion component rate parameter, and the remaining parameters (if any) are the jump component parameters
 
+To interpret your MCMC posterior, we recommend using <a href="http://tree.bio.ed.ac.uk/software/tracer/">Tracer</a>.
 
-####*.jumps.txt
 
-(coming soon)
+####*output_filename*.jumps.txt
+
+The jumps file contains the MCMC chain states sampled at the interval defined by *printFreqJump*. Each row contains a Newick string with node annotations reporting the sampled sum of trait change drawn from the jump measure (hereafter, jump values). Although the jump values are associated with nodes, they correspond to the jumps occurring along the branch from the node's ancestor to the node itself. Note, the topology of the tree remains constant in the current implementation of creepy-jerk.
+
+In the convention of the New Hampshire eXtended (.nhx) format, jump values for branches are given as [&j=*value*] immediately following the taxon label or divergence event.
+
+To quickly visualize sampled values along the tree, we recommend using the tree visualization software, <a href="http://tree.bio.ed.ac.uk/software/figtree/">FigTree 1.4</a>. Load the jump file by selecting File -> Open. Assign the label name "jumps" when prompted. On the left hand side, expand the "Branch Labels" menu, check the checkbox, change "Display" to "jumps", and change "Colour by" to "jumps.
+
+
+
+# Coming soon...
+
+- Analysis scripts
+- Figure scripts

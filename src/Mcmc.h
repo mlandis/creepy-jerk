@@ -48,6 +48,7 @@ private:
 	void		openFiles(std::string outputFilePath);
 	void		printChainState(int n, double v);
 	void		printChainJumps(int n);
+    void        printChainJumpsAsNhx(int n);
 	void		printAcceptanceInfo(void);
 	std::string printBool(bool);
 	std::string printInt(int);

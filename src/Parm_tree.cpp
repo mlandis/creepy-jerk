@@ -1137,3 +1137,58 @@ std::string Tree::getParameterHeader(void) {
 
 	return pStr;
 }
+
+/*
+// write tree string
+std::string treeStr = "";
+treeStr = addNodeNhxToString(treePtr->getRoot(), treeStr);
+//std::cout << "nhxStr\n" << treeStr << "\n";
+nhxStrm << "tree TREE1 = " << treeStr << "\n";
+nhxStrm << "End;\n";
+
+
+*/
+
+
+std::string Topology::getNhxString(void)
+{
+    std::string s = "";
+    return addNodeNhxToString(root, s);
+}
+
+std::string Topology::addNodeNhxToString(Node* p, std::string s)
+{
+    
+    if (p != NULL)
+    {
+        // define divergence events
+        Node* lft = p->getLft();
+        Node* rht = p->getRht();
+        if (lft != NULL && rht != NULL)
+        {
+            s += "(";
+            s = addNodeNhxToString(lft,s);
+            s += ",";
+            s = addNodeNhxToString(rht,s);
+            s += ")";            
+        }
+        
+        // define node & branch values
+        std::stringstream ss;
+        
+        // only label tips
+        if (lft == NULL && rht == NULL)
+            ss << p->getName();
+        
+        ss << "[&j=";
+        ss << p->getSumJumpSize(0);
+        ss << "]:" << p->getV();
+        s += ss.str();
+    }
+    
+    // string complete
+    if (p == root)
+        s += ";";
+    
+    return s;
+}

@@ -1,5 +1,5 @@
 # Hello
-Interested in modeling continuous trait evolution on a phylogeny as a Lévy process? This git repository contains the most recent source code for the method we described in Systematic Biology, found <a href="http://sysbio.oxfordjournals.org/content/62/2/193.full">here</a>. We whipped together this guide to respond to questions received thus far and plan to release an official manual once we've collected feedback from users. Please feel welcome to email us with questions about the method or the model.
+Interested in modeling continuous trait evolution on a phylogeny as a Lévy process? This git repository contains the most recent source code for the method we described in Systematic Biology, found <a href="http://sysbio.oxfordjournals.org/content/62/2/193.full">here</a>. We whipped together this guide to respond to questions received thus far. Please feel welcome to email us with questions about the method or the model.
 
 Our best,
 
@@ -126,7 +126,6 @@ In the convention of the New Hampshire eXtended (.nhx) format, jump values for b
 To quickly view the posterior jump value samples, we recommend using the tree visualization software, <a href="http://tree.bio.ed.ac.uk/software/figtree/">FigTree 1.4</a>. Load the jump file by selecting File -> Open. Assign the label name "jumps" when prompted. On the left hand side, expand the "Appearance" menu and change "Colour by" to "jumps". To ensure a unique mapping of values to colors, click the "Colours" button beneath the "Colour by" menu, and drag the lower "Hue" marker about 15% to the right, and click "OK".
 
 
-# Coming soon...
+# Analyzing the output
 
-- Analysis scripts
-- Figure scripts
+The scripts used in the manuscript are incompatible with the new Tracer/Figtree compatible file formats and are thus unavailable at this time.

@@ -59,10 +59,10 @@ Settings::Settings(int argc, char** argv)
 	finalStep = 10000.0;	//300.0;
 
 	// MCMC settings
-	numCycles = pow(10,1)*2;
-	printFreqMH = 1000;
-	printFreqJump = printFreqMH;
-	printFreqStdOut = printFreqMH;
+	numCycles = pow(10,6)*5;
+	printFreqMH = 10000;
+	printFreqJump = 10000;
+	printFreqStdOut = 1000;
 	printFreqCRP = printFreqMH;
 	printStdOut = true;
 
@@ -80,13 +80,10 @@ Settings::Settings(int argc, char** argv)
 	integralError = 1e-6;
 
 	// File names
-    inputDirPath = "";
-    outputDirPath = "";
+    inputDirPath = "./";
+    outputDirPath = "./";
 	outputFileName = "";
 
-    exprFileName = "";
-    treeFileName = "";
-    taxaFileName = "";
     
     //inputDirPath = "/Users/mlandis/data/expr_phylo/input/";
 	//outputDirPath = "/Users/mlandis/data/expr_phylo/output/";
@@ -101,6 +98,13 @@ Settings::Settings(int argc, char** argv)
 	//treeFileName = "primates.eastman.isler_pruned.tree.txt";
 	//exprFileName = "primates.eastman.isler_pruned.mass.data.txt";
 
+    inputDirPath = "/Users/mlandis/Documents/code/creepy-jerk/examples/";
+    outputDirPath = "/Users/mlandis/Documents/code/creepy-jerk/examples/";
+    exprFileName = "primates.mass.data.txt";
+    treeFileName = "primates.tree.txt";
+    taxaFileName = "primates.taxa.txt";
+
+    
 
 	// Assign settings arguments
 	setArguments(argc, argv);

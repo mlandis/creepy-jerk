@@ -29,15 +29,15 @@ Analysis model type: 1=alpha-stable, 3=compound Poisson with normally distribute
 
 *numCycles*
 
-Number of MCMC cycles for the analysis (default 2000000)
+Number of MCMC cycles for the analysis (default 10000000)
 
 *printFreqMH*
 
-MCMC parameter sample frequency (default: 1000)
+MCMC parameter sample frequency (default: 10000)
 
 *printFreqJump*
 
-MCMC per-branch jump size sample frequency, indexed by branch's immediately descendant node (default: 1000)
+MCMC per-branch jump size sample frequency, indexed by branch's immediately descendant node (default: 10000)
 
 *seed*
 

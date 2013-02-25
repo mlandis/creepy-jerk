@@ -423,9 +423,12 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 		double sig_bm = (t->getParmVector()[0])->getValue();
 		double lam_jn = (t->getParmVector()[1])->getValue();
 		double sig_jn = (t->getParmVector()[2])->getValue();
+        double sig_bm_2 = sig_bm * sig_bm;
+        double sig_jn_2 = sig_jn * sig_jn;
 
 		double v = p->getV();
 		double w = v * (1.0 - tuningBM);
+        double w_sqrt = pow(w,0.5);
 
 		// REMOVE LATER
 		//return randomPtr->lnNormalPdf(0.0, sig_bm, x);
@@ -490,9 +493,12 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 		double sig_bm = (t->getParmVector()[0])->getValue();
 		double lam_jn = (t->getParmVector()[1])->getValue();
 		double sig_jn = (t->getParmVector()[2])->getValue();
+        double sig_bm_2 = sig_bm * sig_bm;
+        double sig_jn_2 = sig_jn * sig_jn;
 
 		double v = p->getV();
 		double w = v * (1.0 - tuningBM);
+        double w_sqrt = pow(w,0.5);
 		double x = p->getSumJumpSize(space);
 
 		// REMOVE LATER
@@ -505,14 +511,16 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 			if (lam_jn == 0.0)
 			{
 				std::cout << "Model::jumpLnLikelihood():\tlam_jn == 0.0 ... but how!?\n";
-				double y = randomPtr->lnNormalPdf(0.0, pow(w, 0.5) * sig_bm, x);
+//				double y = randomPtr->lnNormalPdf(0.0, pow(w, 0.5) * sig_bm, x);
+                double y = randomPtr->lnNormalPdf(0.0, w_sqrt * sig_bm, x);
 #if DEBUG2
 				std::cout << "\t\tn" << p->getIndex() << "\tv:\t" << v << "\tx:\t" << x << "\tlnL:\t" << y <<  "\n";
 #endif
 				return y;
 			}
 			newK = randomPtr->poissonProb(lam_jn * v, n);
-			newK *= randomPtr->normalPdf(0.0, pow(n * pow(sig_jn,2) + w * pow(sig_bm,2), 0.5), x);
+			newK *= randomPtr->normalPdf(0.0, pow(n * sig_jn_2 + w * sig_bm_2, 0.5), x);
+            // newK *= randomPtr->normalPdf(0.0, pow(n * pow(sig_jn,2) + w * pow(sig_bm,2), 0.5), x);
 			//newK *= randomPtr->normalPdf(0.0, pow(n * pow(sig_jn,2),0.5),x);// + w * pow(sig_bm,2), 0.5), x);
 			k += newK;
 			n++;

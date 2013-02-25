@@ -1,1 +1,1 @@
-./creepy-jerk -modelType=3 -simName=example -printStdOut=True -printFreqStdOut=1000 -printFreqJump=1000 -printFreqMH=1000 -numCycles=2000000 -outputFilePath=./ -inputFilePath=./ -dataFileName=primates.mass.data.txt -taxaFileName=primates.taxa.txt -treeFileName=primates.tree.txt
+./creepy-jerk -modelType=3 -simName=example -printStdOut=True -printFreqStdOut=1000 -printFreqJump=10000 -printFreqMH=10000 -numCycles=10000000 -outputFilePath=./ -inputFilePath=./ -dataFileName=primates.mass.data.txt -taxaFileName=primates.taxa.txt -treeFileName=primates.tree.txt

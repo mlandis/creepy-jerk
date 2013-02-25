@@ -1177,12 +1177,13 @@ std::string Topology::addNodeNhxToString(Node* p, std::string s)
         std::stringstream ss;
         
         // only label tips
-        if (lft == NULL && rht == NULL)
-            ss << p->getName();
+     //   if (lft == NULL && rht == NULL)
+       //     ss << p->getName();
         
-        ss << "[&j=";
+       // ss << "[&j=";
         ss << std::setprecision(16) << std::fixed << p->getSumJumpSize(0);
-        ss << "]:" << p->getV();
+//        ss << "]";
+        ss << ":" << p->getV();
         s += ss.str();
     }
     

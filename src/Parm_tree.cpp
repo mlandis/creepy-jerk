@@ -1181,7 +1181,7 @@ std::string Topology::addNodeNhxToString(Node* p, std::string s)
             ss << p->getName();
         
         ss << "[&j=";
-        ss << p->getSumJumpSize(0);
+        ss << std::setprecision(16) << std::fixed << p->getSumJumpSize(0);
         ss << "]:" << p->getV();
         s += ss.str();
     }

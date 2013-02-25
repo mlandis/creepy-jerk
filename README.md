@@ -85,14 +85,6 @@ Console print frequency (default: 1000)
 
 ####*output_filename*.parameters.txt
 
-Example:
-
-<code>Cycle lnL lnB lnJ kurt    sigma-JN    lambda-JN   delta-JN    
-0   -1247.85        -282.907    -964.947    0.00214928  0.833718    0.681736    0.165492    
-1000    53.90       -64.6927    118.596 0.0175666   0.134847    1.014156    0.116552    
-2000    108.73      -34.529 143.256 0.0406107   0.108665    0.785622    0.150189    
-</code>
-
 To interpret your MCMC posterior, we recommend using <a href="http://tree.bio.ed.ac.uk/software/tracer/">Tracer</a>. The parameters file contains the MCMC chain states sampled at the interval defined by *printFreqMH*. All fields are tab-delimited, with each column corresponding to a state variable, with those states being (in order):
 
 *Cycle*
@@ -111,9 +103,13 @@ The pure-diffusion model log likelihood
 
 The pure-jump model log likelihood
 
+*var*
+
+The variance per unit time, which is a function of the *modelType* variable.
+
 *kurt*
 
-The positive excess kurtosis per unit time, which is a function of the *modelType* variable
+The kurtosis per unit time, which is a function of the *modelType* variable
 
 *parameterName-modelType*
 
@@ -125,10 +121,9 @@ The model parameters, where sigma-modelType is the Brownian motion component rat
 
 The jumps file contains the MCMC chain states sampled at the interval defined by *printFreqJump*. Each row contains a Newick string with node annotations reporting the sampled sum of trait change drawn from the jump measure (hereafter, jump values). Although the jump values are associated with nodes, they correspond to the jumps occurring along the branch from the node's ancestor to the node itself. Note, the topology of the tree remains constant in the current implementation of creepy-jerk.
 
-In the convention of the New Hampshire eXtended (.nhx) format, jump values for branches are given as [&j=*value*] immediately following the taxon label or divergence event.
+In the convention of the New Hampshire eXtended (.nhx) format, jump values for branches are given as [&j=value] immediately following the taxon label or divergence event.
 
-To quickly visualize sampled values along the tree, we recommend using the tree visualization software, <a href="http://tree.bio.ed.ac.uk/software/figtree/">FigTree 1.4</a>. Load the jump file by selecting File -> Open. Assign the label name "jumps" when prompted. On the left hand side, expand the "Branch Labels" menu, check the checkbox, change "Display" to "jumps", and change "Colour by" to "jumps.
-
+To quickly view the posterior jump value samples, we recommend using the tree visualization software, <a href="http://tree.bio.ed.ac.uk/software/figtree/">FigTree 1.4</a>. Load the jump file by selecting File -> Open. Assign the label name "jumps" when prompted. On the left hand side, expand the "Appearance" menu and change "Colour by" to "jumps". To ensure a unique mapping of values to colors, click the "Colours" button beneath the "Colour by" menu, and drag the lower "Hue" marker about 15% to the right, and click "OK".
 
 
 # Coming soon...

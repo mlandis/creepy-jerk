@@ -580,13 +580,14 @@ void Mcmc::printChainState(int n, double lnL) {
 			}
 		}
 
-		parmFileStrm << "Cycle\tlnL\tlnB\tlnJ\tkurt\t" << pHeaderStr << std::endl;
+		parmFileStrm << "Cycle\tlnL\tlnB\tlnJ\tvar\tkurt\t" << pHeaderStr << std::endl;
 	}
 
 	std::string pStr = "";
 	pStr += "\t" + printDouble(oldKb);
 	pStr += "\t" + printDouble(oldKj);
-    pStr += "\t" + printDouble(modelPtr->getPositiveExcessKurtosisPerUnitTime());
+    pStr += "\t" + printDouble(modelPtr->getProcessVariance());
+    pStr += "\t" + printDouble(modelPtr->getProcessKurtosis());
 	pStr += "\t";
 
 	for (std::list<Table*>::iterator it_t = tableListPtr->begin(); it_t != tableListPtr->end(); it_t++)

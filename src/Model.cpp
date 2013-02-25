@@ -869,7 +869,7 @@ double Model::driftLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, i
 	return lnL;
 }
 
-double Model::getPositiveExcessKurtosisPerUnitTime(void)
+double Model::getProcessKurtosis(void)
 {
     Table* t = tableList.front();
     std::vector<Parm*> p = t->getParmVector();
@@ -919,6 +919,69 @@ double Model::getPositiveExcessKurtosisPerUnitTime(void)
     else if (modelType == BM_JUMP_PDF)
     {
         ;
+    }
+    else if (modelType == DBL_EXP_NUMINT)
+    {
+        ;
+    }
+    else if (modelType == SKEW_NORMAL_NUMINT)
+    {
+        ;
+    }
+    return ret;
+}
+
+double Model::getProcessVariance(void)
+{
+    Table* t = tableList.front();
+    std::vector<Parm*> p = t->getParmVector();
+    double ret = 0.0;
+    
+    if (modelType == NORM_INV_GAUSS_BESSEL)
+    {
+        ;
+    }
+    else if (modelType == ALPHA_STABLE_NUMINT)
+    {
+        ret = -1.0;
+    }
+    else if (modelType == JUMP_NORM_NUMINT)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = p0*p0 + p1*p2*p2;
+    }
+    else if (modelType == JUMP_NORM_PDF)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = p0*p0 + p1*p2*p2;
+    }
+    else if (modelType == VAR_GAMMA_BESSEL)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = p0*p0 + p2*p2;
+    }
+    else if (modelType == BM_ONLY)
+    {
+        double p0 = p[0]->getValue();
+        ret = p0*p0;
+    }
+    else if (modelType == VAR_GAMMA_NUMINT)
+    {
+        double p0 = p[0]->getValue();
+        double p1 = p[1]->getValue();
+        double p2 = p[2]->getValue();
+        ret = p0*p0 + p2*p2;
+    }
+    else if (modelType == BM_JUMP_PDF)
+    {
+        double p0 = p[0]->getValue();
+        ret = p0*p0;
     }
     else if (modelType == DBL_EXP_NUMINT)
     {

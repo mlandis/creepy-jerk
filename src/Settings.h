@@ -68,6 +68,7 @@ public:
 	int			getPrintFreqJump(void)			{ return printFreqJump; }
 	int			getPrintFreqStdOut(void)		{ return printFreqStdOut; }
 	bool		getPrintStdOut(void)			{ return printStdOut; }
+    int         getSnrBurnIn(void)              { return snrBurnIn; }
 
 	bool		getUseFFT(void)					{ return useFFT; }
 	int			getNumSteps(void)				{ return numSteps; }
@@ -135,6 +136,7 @@ private:
 	int printFreqJump;
 	int printFreqStdOut;
 	bool printStdOut;
+    int snrBurnIn;
 
 	// FFT
 	bool useFFT;

@@ -60,11 +60,12 @@ Settings::Settings(int argc, char** argv)
 
 	// MCMC settings
 	numCycles = pow(10,6)*5;
-	printFreqMH = 10000;
-	printFreqJump = 10000;
-	printFreqStdOut = 1000;
+	printFreqMH = 10000;//0000;
+	printFreqJump = 10000;//0000;
+	printFreqStdOut = 1000;//000;
 	printFreqCRP = printFreqMH;
 	printStdOut = true;
+    snrBurnIn = 0.25 * numCycles;
 
 	// CRP settings
 	alphaCRP = 0.75;
@@ -188,6 +189,8 @@ void Settings::setArguments(int argc, char** argv)
 			printStdOut = Util::stringToBool(argVal);
 		else if (argName == "-printFreqStdOut")
 			printFreqStdOut = Util::stringToInt(argVal);
+        else if (argName == "-snrBurnIn")
+            snrBurnIn = Util::stringToInt(argVal);
 
 
 		// MODEL SETTINGS
@@ -220,7 +223,10 @@ void Settings::setArguments(int argc, char** argv)
 
 		// MCMC SETTINGS
 		else if (argName == "-numCycles")
+        {
 			numCycles = Util::stringToInt(argVal);
+            snrBurnIn = 0.25 * numCycles;
+        }
 		else if (argName == "-printFreqMH")
 			printFreqMH = Util::stringToInt(argVal);
 		else if (argName == "-printFreqJump")
@@ -260,6 +266,7 @@ void Settings::print(void)
 	std::cout << "\t\tprintFreqMH       = " << printFreqMH << "\n";
 	std::cout << "\t\tprintFreqJump     = " << printFreqJump << "\n";
 	std::cout << "\t\tprintFreqStdOut   = " << printFreqStdOut << "\n";
+    std::cout << "\t\tsnrBurnIn         = " << snrBurnIn << "\n";
 
 	std::cout << "\tModel Testing\n";
 	std::cout << "\t\tuseSteppingStone  = " << Util::boolToString(useSteppingStone) << "\n";

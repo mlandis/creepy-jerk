@@ -1177,12 +1177,12 @@ std::string Topology::addNodeNhxToString(Node* p, std::string s)
         std::stringstream ss;
         
         // only label tips
-     //   if (lft == NULL && rht == NULL)
-       //     ss << p->getName();
+        if (lft == NULL && rht == NULL)
+            ss << p->getName();
         
-       // ss << "[&j=";
+        ss << "[&j=";
         ss << std::setprecision(16) << std::fixed << p->getSumJumpSize(0);
-//        ss << "]";
+        ss << "]";
         ss << ":" << p->getV();
         s += ss.str();
     }
@@ -1192,4 +1192,85 @@ std::string Topology::addNodeNhxToString(Node* p, std::string s)
         s += ";";
     
     return s;
+}
+
+std::string Topology::getNhxStringForSnr(double& boundary)
+{
+    std::string s = "";
+    std::cout << "BOUNDARY: " << boundary << "\n";
+    return addNodeNhxForSnrToString(root, s, boundary);
+}
+
+std::string Topology::addNodeNhxForSnrToString(Node* p, std::string s, double& boundary)
+{
+    
+    if (p != NULL)
+    {
+        
+        // define divergence events
+        Node* lft = p->getLft();
+        Node* rht = p->getRht();
+        if (lft != NULL && rht != NULL)
+        {
+            s += "(";
+            s = addNodeNhxForSnrToString(lft,s,boundary);
+            s += ",";
+            s = addNodeNhxForSnrToString(rht,s,boundary);
+            s += ")";
+        }
+        
+        
+        // get signal to noise ratio for branch
+        std::vector<double> storedJumps = p->getStoredJumps();
+
+        double mean = 0.0;
+        for (int i = 0; i < storedJumps.size(); i++)
+            mean += storedJumps[i];
+        mean /= storedJumps.size();
+        
+        double sd = 0.0;
+        for (int i = 0; i < storedJumps.size(); i++)
+            sd += pow(mean - storedJumps[i],2);
+        sd /= storedJumps.size();
+        sd = pow(sd,0.5);
+        
+        double snr = 0.0;
+        if (p->getV() > 0.0 && sd > 0.0)
+            snr = mean / (sd * pow(p->getV(),0.5));
+        
+        //std::cout << "** " << p->getName() << " " <<  p->getIndex() << " " << p->getV() << " " << mean << " " << sd  << " " << snr << " " << " " << boundary << " " << storedJumps.size() << "\n";
+        
+        // get largest magnitude snr to create symmetric color bar about 0.0
+        if (fabs(snr) > boundary)
+            boundary = fabs(snr);
+
+        //std::cout << s << "\n";
+        //std::cout << p->getName() << "\t" << p->getIndex() << "\t" << p->getV() << "\t" << mean << "\t" << sd << "\t" << snr << "\t" << boundary << "\n";
+        
+        // define node & branch values
+        std::stringstream ss;
+        
+        // only label tips
+        if (lft == NULL && rht == NULL)
+            ss << p->getName();
+        
+        ss << "[&j=";
+        ss << std::setprecision(16) << std::fixed << snr;
+        ss << "]";
+        ss << ":" << p->getV();
+        s += ss.str();
+        
+    }
+    
+    // string complete
+    if (p == root)
+        s += ";";
+    
+    return s;
+}
+
+void Topology::storeAllJumps(void)
+{
+    for (int i = 0; i < numNodes; i++)
+        nodes[i].pushStoredJump();
 }

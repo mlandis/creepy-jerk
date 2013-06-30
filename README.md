@@ -39,6 +39,10 @@ MCMC parameter sample frequency (default: 10000)
 
 MCMC per-branch jump size sample frequency, indexed by branch's immediately descendant node (default: 10000)
 
+*snrBurnIn*
+
+Burn-in period for computing the branch-length-normalized signal-to-noise ratio tree figure (default: 0.25 * numCycles)
+
 *seed*
 
 Random number generator seed (default: system time, i.e. effectively random)
@@ -117,13 +121,16 @@ The model parameters, where sigma-modelType is the Brownian motion component rat
 
 
 
-####*output_filename*.jumps.txt
+####*output_filename*.jumps.txt and *output_filename*.jumps_snr.txt
 
 The jumps file contains the MCMC chain states sampled at the interval defined by *printFreqJump*. Each row contains a Newick string with node annotations reporting the sampled sum of trait change drawn from the jump measure (hereafter, jump values). Although the jump values are associated with nodes, they correspond to the jumps occurring along the branch from the node's ancestor to the node itself. Note, the topology of the tree remains constant in the current implementation of creepy-jerk.
 
+The jump_snr file contains the final branch-length-normalized signal-to-noise ratio of the tree's posterior jump values. The color scale is defined such that a value of 0.0 is gray, and the intensity of colors indicates the deviation in this value from 0.0. Finally, these values exclude the burn-in period as defined by the *snrBurnIn* flag (default: 0.25 * numCycles).
+
 In the convention of the New Hampshire eXtended (.nhx) format, jump values for branches are given as [&j=value] immediately following the taxon label or divergence event.
 
-To quickly view the posterior jump value samples, we recommend using the tree visualization software, <a href="http://tree.bio.ed.ac.uk/software/figtree/">FigTree 1.4</a>. Load the jump file by selecting File -> Open. Assign the label name "jumps" when prompted. On the left hand side, expand the "Appearance" menu and change "Colour by" to "jumps". To ensure a unique mapping of values to colors, click the "Colours" button beneath the "Colour by" menu, and drag the lower "Hue" marker about 15% to the right, and click "OK".
+To quickly view the posterior jumps.txt and jumps_snr.txt output, we recommend using the tree visualization software, <a href="http://tree.bio.ed.ac.uk/software/figtree/">FigTree 1.4</a>. Load the jump file by selecting File -> Open.
+
 
 
 # Analyzing the output

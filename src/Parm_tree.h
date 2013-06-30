@@ -100,8 +100,8 @@ public:
 	void					setLnProbJumpSize(std::vector<double>& x, int space)	{ lnProbJumpSize[space] = x; }
 	void					setSumLnProbJumpSize(double x, int space)				{ sumLnProbJumpSize[space] = x; }
 
-
-
+    std::vector<double>     getStoredJumps(void) { return storedJumps; }
+    void                    pushStoredJump(void) { storedJumps.push_back(sumJumpSize[0]); }
 
 private:
 	Node*					lft;
@@ -134,6 +134,7 @@ private:
 	std::vector<double>		lnProbJumpSize[2];
 	double					sumJumpSize[2];
 	double					sumLnProbJumpSize[2];
+    std::vector<double>     storedJumps;
 
 };
 
@@ -164,7 +165,7 @@ public:
 	void			setNumJumps(int x, int space)				{ numJumps = x; }
 	void			incrementNumJumps(void)				{ numJumps++; }
 	void			decrementNumJumps(void)				{ numJumps--; }
-
+ 
 	void			setBranchRatios(void);
 	void			copyNodeSpaces(int i, int j);
 
@@ -180,9 +181,12 @@ public:
 	void			printJumpSummary(void);
 	void			printJumpSizes(int space);
 	void			markPathDownFromNode(Node* p);
+    void            storeAllJumps(void);
 
     std::string     addNodeNhxToString(Node* p, std::string s);
     std::string     getNhxString(void);
+    std::string     getNhxStringForSnr(double& boundary);
+    std::string     addNodeNhxForSnrToString(Node*p, std::string, double& boundary);
     
 private:
 	void			buildRandomTree(Expression *ep);
@@ -202,6 +206,7 @@ private:
 	double			brlenLambda;
 	double			treeLength;
 	int				numJumps;
+
 
 };
 

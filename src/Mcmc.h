@@ -69,6 +69,7 @@ private:
 	int			printFreqCRP;
 	int			printFreqJump;
 	int			printFreqStdOut;
+    int         snrBurnIn;
 
 	int			numTranscripts;
 	int			numTimepoints;
@@ -96,7 +97,7 @@ private:
 
 	int			patronIndex;
 
-	std::ofstream parmFileStrm, jumpFileStrm, tableFileStrm, patronFileStrm;
+	std::ofstream parmFileStrm, jumpFileStrm, snrFileStrm, tableFileStrm, patronFileStrm;
 
 
 };

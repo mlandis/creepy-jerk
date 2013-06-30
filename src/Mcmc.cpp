@@ -29,6 +29,7 @@ Mcmc::Mcmc(Expression *ep, Model *mp, Settings *sp, MbRandom *rp, Topology *tp)
 	printFreqCRP = settingsPtr->getPrintFreqCRP();
 	printFreqJump = settingsPtr->getPrintFreqJump();
 	printFreqStdOut = settingsPtr->getPrintFreqStdOut();
+    snrBurnIn = settingsPtr->getSnrBurnIn();
 
 	// MCMC settings (override)
 	//numCycles = 1000000;
@@ -541,6 +542,7 @@ void Mcmc::openFiles(std::string fn) {
 	std::string tf = fn + ".t";
 	std::string pf = fn + ".parameters.txt";
 	std::string jf = fn + ".jumps.txt";
+    std::string sf = fn + ".jump_snr.txt";
 	std::string patronFile = fn + ".patron";
 	std::string tableFile = fn + ".table";
 
@@ -555,6 +557,13 @@ void Mcmc::openFiles(std::string fn) {
 	if ( !jumpFileStrm )
 	{
 		std::cerr << "ERROR: Problem opening jump output file" << std::endl;
+		exit(1);
+	}
+    
+    snrFileStrm.open( sf.c_str(), std::ios::out );
+	if ( !snrFileStrm )
+	{
+		std::cerr << "ERROR: Problem opening signal-to-noise ratio jump output file" << std::endl;
 		exit(1);
 	}
 }
@@ -643,12 +652,69 @@ void Mcmc::printChainJumps(int n)
 
 void Mcmc::printChainJumpsAsNhx(int n)
 {
+    /*
 	if (n == 0)
 	{
 		jumpFileStrm << "Cycle\tnhxString" << std::endl;
 	}
+     */
+    if (n == 0)
+    {
+        jumpFileStrm << "#NEXUS" << std::endl << "begin trees;" << std::endl;
+
+    }
     
-	jumpFileStrm << n << "\t" << topologyPtr->getNhxString() << std::endl;
+	jumpFileStrm << "\ttree t" << n << " = " << topologyPtr->getNhxString() << std::endl;
+    
+    if (n >= snrBurnIn)
+        topologyPtr->storeAllJumps();
+    
+    if (n == numCycles)
+    {
+        // complete NEXUS block
+        
+        /*
+        std::stringstream ss;
+        ss << "end;" << std::endl;
+    
+        ss << "begin figtree;" << std::endl;
+        ss << "\tset appearance.branchColorAttribute=\"j\";" << std::endl;
+        ss << "\tset appearance.branchLineWidth=2.0;" << std::endl;
+        ss << "\tset scaleBar.isShown=false;" << std::endl;
+        //ss << "\tset colour.scheme.j=\"j:HSBContinuous{{false,false,0.0,0.0},0.0,0.668,1.0,1.0,0.658,0.658,false}\"" << std::endl;
+        //ss << "\tset branchLabels.isShown=true;" << std::endl;
+        ss << "end;" << std::endl;
+        */
+        
+        
+        std::string s = "";
+        s += "end;\n";
+        
+        s += "begin figtree;\n";
+        s += "\tset appearance.branchColorAttribute=\"j\";\n";
+        s += "\tset appearance.branchLineWidth=5.0;\n";
+        s += "\tset scaleBar.isShown=false;\n";
+        s += "\tset legend.attribute=\"j\";\n";
+        s += "\tset legend.isShown=true;\n";
+        //s += "end;\n";
+
+        
+        // write raw jump values
+        std::string s_raw = s;
+        s_raw += "\tset colour.scheme.j=\"j:InterpolatingContinuous{{false,false,-4.0,4.0},#-16776961,#-3355444,#-65536}\";\n";
+        jumpFileStrm << s_raw << "end;\n" << std::endl;
+        
+       // // write SNR values
+        double boundary_snr = 0.0;
+        snrFileStrm << "#NEXUS" << std::endl << "begin trees;" << std::endl;
+        snrFileStrm << "\ttree t" << n << " = " << topologyPtr->getNhxStringForSnr(boundary_snr) << std::endl;
+        
+        std::string s_snr = s;
+        s_snr += "\tset colour.scheme.j=\"j:InterpolatingContinuous{{true,false," + Util::doubleToString(-boundary_snr);
+        s_snr += "," + Util::doubleToString(boundary_snr) + "},#-16776961,#-3355444,#-65536}\";\n";
+        snrFileStrm << s_snr << "end;\n" << std::endl;
+        std::cout << "boundary\t" << boundary_snr << "\n";
+    }
 }
 
 

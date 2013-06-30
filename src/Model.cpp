@@ -501,11 +501,14 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
         double w_sqrt = pow(w,0.5);
 		double x = p->getSumJumpSize(space);
 
-		// REMOVE LATER
-		//return randomPtr->lnNormalPdf(0.0, sig_bm, x);
-
+        double th = 1e-20;
+        double oldK = 0.0;
+        bool pastMax = false;
+        
 		// sum over all possible numbers of jumps (truncated to n<100)
 		int n = 0;
+        //std::cout << p->getIndex() << "\n";
+        //std::cout << v << " " << x << " " << sig_bm << " " << sig_jn << " " << lam_jn << "\n";
 		do
 		{
 			if (lam_jn == 0.0)
@@ -518,15 +521,21 @@ double Model::jumpLnLikelihood(Node* p, const std::vector<Parm*>& parmVector, in
 #endif
 				return y;
 			}
+            oldK = newK;
 			newK = randomPtr->poissonProb(lam_jn * v, n);
 			newK *= randomPtr->normalPdf(0.0, pow(n * sig_jn_2 + w * sig_bm_2, 0.5), x);
             // newK *= randomPtr->normalPdf(0.0, pow(n * pow(sig_jn,2) + w * pow(sig_bm,2), 0.5), x);
 			//newK *= randomPtr->normalPdf(0.0, pow(n * pow(sig_jn,2),0.5),x);// + w * pow(sig_bm,2), 0.5), x);
 			k += newK;
 			n++;
-		}while(n < 100);
-
+            //std::cout << "\t" << k << "\n";
+		}while(n < 1000 && ((newK - oldK) >= 0
+                        || -(newK - oldK) >= th)
+        );
+        //std::cout << "n " << n << "\n";
+        //std::cout << k << " ";
 		k = log(k);
+        //std::cout << k << "\n\n";
 #if DEBUG2
 			std::cout << "\t\tn:" << p->getIndex() <<  "\tv:\t" << v << "\tw:\t" << w << "\tx:\t" << x << "\tlnL:\t" << k <<  "\n";
 			std::cout << "\t\tn*sig_jn^2:\t" << n*pow(sig_jn,2) << "\tw*sig_bm^2:\t" << w * pow(sig_bm,2) << "\n";

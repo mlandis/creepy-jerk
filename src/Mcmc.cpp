@@ -713,7 +713,7 @@ void Mcmc::printChainJumpsAsNhx(int n)
         s_snr += "\tset colour.scheme.j=\"j:InterpolatingContinuous{{true,false," + Util::doubleToString(-boundary_snr);
         s_snr += "," + Util::doubleToString(boundary_snr) + "},#-16776961,#-3355444,#-65536}\";\n";
         snrFileStrm << s_snr << "end;\n" << std::endl;
-        std::cout << "boundary\t" << boundary_snr << "\n";
+        //std::cout << "boundary\t" << boundary_snr << "\n";
     }
 }
 

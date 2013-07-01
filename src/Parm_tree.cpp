@@ -1197,7 +1197,7 @@ std::string Topology::addNodeNhxToString(Node* p, std::string s)
 std::string Topology::getNhxStringForSnr(double& boundary)
 {
     std::string s = "";
-    std::cout << "BOUNDARY: " << boundary << "\n";
+    //std::cout << "BOUNDARY: " << boundary << "\n";
     return addNodeNhxForSnrToString(root, s, boundary);
 }
 

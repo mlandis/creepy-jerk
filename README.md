@@ -1,9 +1,16 @@
 # Hello
-Interested in modeling continuous trait evolution on a phylogeny as a Lévy process? This git repository contains the most recent source code for the method we described in Systematic Biology, found <a href="http://sysbio.oxfordjournals.org/content/62/2/193.full">here</a>. We whipped together this guide to respond to questions received thus far. Please feel welcome to email us with questions about the method or the model.
+Interested in modeling continuous trait evolution on a phylogeny as a Lévy process? This git repository contains the most recent source code for the method we described in Systematic Biology, found <a href="http://sysbio.oxfordjournals.org/content/62/2/193.full">here</a>. We whipped together this guide to respond to questions received thus far. Please feel welcome to email us with questions about the method or the model: mlandis (at) berkeley (dot) edu.
 
 Our best,
 
 Michael, Josh, and Mason
+
+# Update
+* July 2, 2013
+Method now produces TreeFig compatible .jump_snr.txt output file to show which branches have strong signal for jumps (described in paper).
+SNR is now scaled by inverse square root of the branch length instead of just the branch length.
+Improved jump normal (modelType=3) performance.
+
 
 # Installation
 1. From the command line, navigate into the <code>src</code> folder.
@@ -121,7 +128,7 @@ The model parameters, where sigma-modelType is the Brownian motion component rat
 
 
 
-####*output_filename*.jumps.txt and *output_filename*.jumps_snr.txt
+####*output_filename*.jumps.txt and *output_filename*.jump_snr.txt
 
 The jumps file contains the MCMC chain states sampled at the interval defined by *printFreqJump*. Each row contains a Newick string with node annotations reporting the sampled sum of trait change drawn from the jump measure (hereafter, jump values). Although the jump values are associated with nodes, they correspond to the jumps occurring along the branch from the node's ancestor to the node itself. Note, the topology of the tree remains constant in the current implementation of creepy-jerk.
 
@@ -131,8 +138,3 @@ In the convention of the New Hampshire eXtended (.nhx) format, jump values for b
 
 To quickly view the posterior jumps.txt and jumps_snr.txt output, we recommend using the tree visualization software, <a href="http://tree.bio.ed.ac.uk/software/figtree/">FigTree 1.4</a>. Load the jump file by selecting File -> Open.
 
-
-
-# Analyzing the output
-
-The scripts used in the manuscript are incompatible with the new Tracer/Figtree compatible file formats and are thus unavailable at this time.

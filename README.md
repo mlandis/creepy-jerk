@@ -7,11 +7,9 @@ Michael, Josh, and Mason
 
 # Update
 * July 2, 2013
-Method now produces TreeFig compatible .jump_snr.txt output file to show which branches have strong signal for jumps (described in paper).
-
-SNR is now scaled by inverse square root of the branch length instead of just the branch length.
-
-Improved jump normal (modelType=3) performance.
+** Method now produces TreeFig compatible .jump_snr.txt output file to show which branches have strong signal for jumps (described in paper).
+** SNR is now scaled by inverse square root of the branch length instead of just the branch length.
+** Improved jump normal (modelType=3) performance.
 
 
 # Installation

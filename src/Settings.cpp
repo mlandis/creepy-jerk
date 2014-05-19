@@ -99,13 +99,17 @@ Settings::Settings(int argc, char** argv)
 	//treeFileName = "primates.eastman.isler_pruned.tree.txt";
 	//exprFileName = "primates.eastman.isler_pruned.mass.data.txt";
 
-    inputDirPath = "/Users/mlandis/Documents/code/creepy-jerk/examples/";
-    outputDirPath = "/Users/mlandis/Documents/code/creepy-jerk/examples/";
-    exprFileName = "primates.mass.data.txt";
-    treeFileName = "primates.tree.txt";
-    taxaFileName = "primates.taxa.txt";
+//    inputDirPath = "/Users/mlandis/Documents/code/creepy-jerk/examples/";
+//    outputDirPath = "/Users/mlandis/Documents/code/creepy-jerk/examples/";
+//    exprFileName = "primates.mass.data.txt";
+//    treeFileName = "primates.tree.txt";
+//    taxaFileName = "primates.taxa.txt";
 
-    
+    inputDirPath = "./";
+    outputDirPath = "./";
+    exprFileName = "";
+    treeFileName = "";
+    taxaFileName = "";
 
 	// Assign settings arguments
 	setArguments(argc, argv);
@@ -125,6 +129,7 @@ Settings::Settings(int argc, char** argv)
 	}
 
 	print();
+    check();
 }
 
 Settings::Settings(void)
@@ -274,3 +279,33 @@ void Settings::print(void)
 
 	std::cout << "\n";
 }
+
+
+void Settings::check(void)
+{
+
+    bool error = false;
+    if (exprFileName == "")
+    {
+        error = true;
+        std::cerr << "ERROR: dataFileName missing!\n";
+    }
+    if (treeFileName == "")
+    {
+        error = true;
+        std::cerr << "ERROR: treeFileName missing!\n";
+    }
+    if (taxaFileName == "")
+    {
+        error = true;
+        std::cerr << "ERROR: taxaFileName missing!\n";
+    }
+    
+    
+    
+    if (error)
+    {
+        std::exit(1);
+    }
+}
+

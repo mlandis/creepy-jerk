@@ -87,6 +87,7 @@ public:
 
 	int			getModelType(void)				{ return modelType; }
 	void		print(void);
+    void        check(void);
 
 private:
 

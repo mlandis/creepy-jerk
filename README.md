@@ -16,6 +16,8 @@ July 2, 2013
 1. From the command line, navigate into the <code>src</code> folder.
 2. Before compiling, verify you have the GNU Scientific Library (GSL) installed. For Mac OS X, you can install GSL using <a href="http://mxcl.github.com/homebrew/">Homebrew</a<> as follows: <code>brew install gsl</code>. For Ubuntu, you can install GSL as follows: <code>apt-get install libgsl0-dev</code>. Advice for how to accomplish on Windows is welcome.
 3. To compile, issue the command: <code>g++ -O3 -lgsl *.cpp -o creepy-jerk</code>
+(For Ubuntu-based Linux, Heroen Verbruggen found the following command was needed: <code>g++ -O3 -o creepy-jerk `gsl-config --cflags -libs`</code>)
+
 4. You should now find an executable called <code>creepy-jerk</code> in your current directory.
 
 # Examples

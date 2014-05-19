@@ -13,12 +13,12 @@
 
 #include <iostream>
 #include <map>
-#include <math.h>
+#include <cmath>
 #include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
-#include <time.h>
+#include <ctime>
 #include <vector>
 
 #include "FileMgr.h"

@@ -171,7 +171,7 @@ void Settings::setArguments(int argc, char** argv)
 		if (argName == "" || argVal == "") ;
 
 		// INPUT SETTINGS
-		else if (argName == "-inputDirPath")
+		else if (argName == "-inputDirPath" || argName == "-inputFilePath")
 			inputDirPath = argVal;
 		else if (argName == "-settingsFilePath")
 			settingsFilePath = argVal;
@@ -184,7 +184,7 @@ void Settings::setArguments(int argc, char** argv)
 
 
 		// OUTPUT SETTINGS
-		else if (argName == "-outputDirPath")
+		else if (argName == "-outputDirPath" || argName == "-outputFilePath")
 			outputDirPath = argVal;
 		else if (argName == "-outputFileName")
 			outputFileName = argVal;
